@@ -30,9 +30,11 @@
                     <div class="flex-1 min-w-[150px]"><label for="graph-end-month" class="block text-sm font-medium text-gray-700">グラフ終了月</label><input type="month" id="graph-end-month" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></div>
                     <div class="self-end"><button id="update-graph-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">グラフ更新</button></div>
                 </div>
-                <div class="bg-white p-6 rounded-xl shadow-md mb-8">
+                <div class="bg-white p-6 rounded-xl shadow-md mt-8 mb-8">
                     <h2 class="text-xl font-bold text-gray-800 mb-4">月別プロジェクト稼働時間</h2>
-                    <canvas id="monthly-line-chart"></canvas>
+                    <div class="relative h-72">
+                        <canvas id="monthly-line-chart"></canvas>
+                    </div>
                 </div>
                 <div class="bg-white rounded-xl shadow-md overflow-x-auto">
                     <div class="flex flex-wrap justify-between items-center p-6">

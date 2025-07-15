@@ -5,31 +5,34 @@ let currentUser;
 let allProjects = [];
 let unsubscribeProjects = null;
 let originalProjectName = '';
+// DOM要素をキャッシュするオブジェクト
 const domElements = {};
+
+// ページで使う要素のIDをリスト化
+const elementIds = [
+    'projects-table-body', 'project-modal', 'project-form', 'modal-title', 'status-filter', 
+    'project-id', 'project-name', 'project-code', 'project-is-active', 'is-active-label', 
+    'contract-type', 'unit-price', 'monthly-fixed-rate', 'billing-cycle', 'calculation-method', 
+    'billing-start-date', 'billing-end-date', 'monthly-base-hours', 'billing-adjustment-type', 
+    'monthly-min-hours', 'monthly-max-hours'
+];
 
 export const initProjectsPage = (user) => {
     currentUser = user;
     
-    // ページに必要なDOM要素をまとめて取得
-    const ids = [
-        'projects-table-body', 'project-modal', 'project-form', 'modal-title', 'status-filter', 'project-id',
-        'project-name', 'project-code', 'project-is-active', 'is-active-label', 'contract-type', 'unit-price',
-        'monthly-fixed-rate', 'billing-cycle', 'calculation-method', 'billing-start-date', 'billing-end-date',
-        'monthly-base-hours', 'billing-adjustment-type', 'monthly-min-hours', 'monthly-max-hours'
-    ];
-    // DOM要素をまとめて取得 (idをそのまま使用するように変更)
-    ids.forEach(id => {
-        domElements[id.replace(/-/g, '_')] = document.getElementById(id);
+    // IDリストからDOM要素を取得してキャッシュ
+    elementIds.forEach(id => {
+        domElements[id] = document.getElementById(id);
     });
     
-    // このページの要素がなければ(他のページでこのJSが誤って呼ばれても)処理を中断
-    if (!domElements.projects_table_body) return; 
+    // このページの必須要素がなければ処理を中断
+    if (!domElements['projects-table-body']) return; 
 
     document.getElementById('open-add-project-modal').addEventListener('click', () => openProjectModal());
-    domElements.project_form.addEventListener('submit', handleFormSubmit);
-    domElements.projects_table_body.addEventListener('click', handleTableClick);
-    domElements.status_filter.addEventListener('change', listenForProjects);
-    domElements.project_is_active.addEventListener('change', updateIsActiveLabel);
+    domElements['project-form'].addEventListener('submit', handleFormSubmit);
+    domElements['projects-table-body'].addEventListener('click', handleTableClick);
+    domElements['status-filter'].addEventListener('change', listenForProjects);
+    domElements['project-is-active'].addEventListener('change', updateIsActiveLabel);
     
     setupModalClosers('project-modal');
     listenForProjects();
@@ -38,7 +41,9 @@ export const initProjectsPage = (user) => {
 const listenForProjects = () => {
     toggleLoading(true);
     if (unsubscribeProjects) unsubscribeProjects();
-    unsubscribeProjects = getProjects(currentUser.uid, domElements.status_filter.value, (projects) => {
+    
+    const filterValue = domElements['status-filter'].value === 'active';
+    unsubscribeProjects = getProjects(currentUser.uid, domElements['status-filter'].value, (projects) => {
         allProjects = projects;
         renderProjects(projects);
         toggleLoading(false);
@@ -46,38 +51,41 @@ const listenForProjects = () => {
 };
 
 const openProjectModal = (project = null) => {
-    domElements.project_form.reset();
-    domElements.project_code.disabled = false;
-    if (project) { // --- 編集モード ---
-        domElements.modal_title.textContent = 'プロジェクトを編集';
-        originalProjectName = project.name;
-        // DBから取得した値をフォームの各要素に設定
-        // キー名をスネークケースからキャメルケースに変換して照合
-        const projectDataForForm = {};
-        for (const key in project) {
-            const camelCaseKey = key.replace(/_([a-z])/g, g => g[1].toUpperCase());
-            projectDataForForm[camelCaseKey] = project[key];
-        }
+    const form = domElements['project-form'];
+    form.reset();
+    domElements['project-code'].disabled = false;
 
-        for (const key in domElements) {
-             const element = domElements[key];
-             const camelKey = key.replace(/_([a-z])/g, g => g[1].toUpperCase());
-             if (element && project[camelKey] !== undefined && element.id !== 'project-form' && element.tagName !== 'BUTTON') {
-                 if(element.type === 'checkbox') element.checked = project[camelKey];
-                 else element.value = project[camelKey] || '';
-             }
-        }
-        domElements.project_id.value = project.id;
-        domElements.project_code.disabled = true;
+    if (project) { // --- 編集モード ---
+        domElements['modal-title'].textContent = 'プロジェクトを編集';
+        originalProjectName = project.name;
+        
+        // projectオブジェクトの各キーに対応するフォーム要素に値を設定
+        domElements['project-id'].value = project.id || '';
+        domElements['project-name'].value = project.name || '';
+        domElements['project-code'].value = project.code || '';
+        domElements['project-is-active'].checked = project.isActive || false;
+        domElements['billing-start-date'].value = project.billingStartDate || '';
+        domElements['billing-end-date'].value = project.billingEndDate || '';
+        domElements['contract-type'].value = project.contractType || 'hourly';
+        domElements['unit-price'].value = project.unitPrice || '';
+        domElements['monthly-fixed-rate'].value = project.monthlyFixedRate || '';
+        domElements['monthly-base-hours'].value = project.monthlyBaseHours || '';
+        domElements['billing-adjustment-type'].value = project.billingAdjustmentType || 'per_item';
+        domElements['monthly-min-hours'].value = project.monthlyMinHours || '';
+        domElements['monthly-max-hours'].value = project.monthlyMaxHours || '';
+        domElements['billing-cycle'].value = project.billingCycle || '1';
+        domElements['calculation-method'].value = project.calculationMethod || 'floor';
+
+        domElements['project-code'].disabled = true;
 
     } else { // --- 新規モード ---
-        domElements.modal_title.textContent = 'プロジェクトを追加';
+        domElements['modal-title'].textContent = 'プロジェクトを追加';
         originalProjectName = '';
-        domElements.project_is_active.checked = true;
+        domElements['project-is-active'].checked = true;
         // 新規作成時のデフォルト値
-        domElements.contract_type.value = 'hourly';
-        domElements.billing_cycle.value = '1';
-        domElements.calculation_method.value = 'floor';
+        domElements['contract-type'].value = 'hourly';
+        domElements['billing-cycle'].value = '1';
+        domElements['calculation-method'].value = 'floor';
     }
     updateIsActiveLabel();
     openModal('project-modal');
@@ -87,36 +95,40 @@ const handleFormSubmit = async (e) => {
     e.preventDefault();
     toggleLoading(true);
 
-    const formData = new FormData(domElements.project_form);
+    const formData = new FormData(domElements['project-form']);
     const projectData = {};
 
-    for(const [key, value] of formData.entries()) {
-        const element = document.getElementById(key);
+    // FormDataからデータを取得し、キャメルケースのキーを持つオブジェクトを生成
+    for (const [key, value] of formData.entries()) {
+        const element = domElements[key.replace(/([A-Z])/g, "-$1").toLowerCase()]; // HTMLのIDに再変換
         if (element && element.type === 'checkbox') {
-            projectData[key] = element.checked;
+            projectData[key] = domElements[key.replace(/-/g, '_')].checked;
         } else {
-             projectData[key] = typeof value === 'string' ? value.trim() : value;
+            projectData[key] = value;
         }
+    }
+     // isActiveが未チェックの場合、FormDataに含まれないため明示的にfalseを設定
+    if (!projectData.isActive) {
+        projectData.isActive = false;
     }
     
     // 数値に変換すべきフィールド
-    ['unit_price', 'monthly_fixed_rate', 'billing_cycle', 'monthly_base_hours', 'monthly_min_hours', 'monthly_max_hours'].forEach(key => {
-        const snakeKey = key.replace(/-/g, '_');
-        projectData[snakeKey] = Number(projectData[snakeKey]) || 0;
+    ['unitPrice', 'monthlyFixedRate', 'billingCycle', 'monthlyBaseHours', 'monthlyMinHours', 'monthlyMaxHours'].forEach(key => {
+        projectData[key] = Number(projectData[key]) || 0;
     });
 
-    const projectId = domElements.project_id.value;
+    const projectId = projectData.id;
 
     try {
         if (projectId) { // 更新
             await updateProject(currentUser.uid, projectId, projectData);
-            if (projectData['project-name'] !== originalProjectName) {
+            if (projectData.name !== originalProjectName) {
                 showStatus('稼働履歴のプロジェクト名を更新中です...', false, 4000);
-                await updateProjectNameInTimestamps(currentUser.uid, projectData['project-code'], projectData['project-name']);
+                await updateProjectNameInTimestamps(currentUser.uid, projectData.code, projectData.name);
             }
             showStatus('プロジェクトを更新しました。', false);
         } else { // 新規作成
-            const code = projectData['project-code'];
+            const code = projectData.code;
             const codeExists = allProjects.some(p => p.code === code);
             if (codeExists) throw new Error(`プロジェクトコード '${code}' は既に使用されています。`);
             await addProject(currentUser.uid, projectData);
@@ -140,8 +152,9 @@ const handleTableClick = (e) => {
     if (!project) return;
 
     if (e.target.closest('button.delete-btn')) {
+        e.stopPropagation(); // イベントの伝播を停止
         handleDeleteProject(project);
-        return; // 削除ボタンが押されたら編集モーダルは開かない
+        return; 
     }
     
     openProjectModal(project);
@@ -173,18 +186,19 @@ const handleDeleteProject = async (project) => {
 };
 
 const updateIsActiveLabel = () => {
-    if(domElements.is_active_label) {
-        domElements.is_active_label.textContent = domElements.project_is_active.checked ? '有効' : '無効';
+    if(domElements['is-active-label']) {
+        domElements['is-active-label'].textContent = domElements['project-is-active'].checked ? '有効' : '無効';
     }
 };
 
 const renderProjects = (projects) => {
-    if (!domElements.projects_table_body) return;
+    const tableBody = domElements['projects-table-body'];
+    if (!tableBody) return;
 
-    domElements.projects_table_body.innerHTML = '';
+    tableBody.innerHTML = '';
     
     if (projects.length === 0) {
-        domElements.projects_table_body.innerHTML = '<tr><td colspan="4" class="text-center p-8 text-gray-500">対象のプロジェクトがありません。</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="4" class="text-center p-8 text-gray-500">対象のプロジェクトがありません。</td></tr>';
         return;
     }
 
@@ -207,6 +221,6 @@ const renderProjects = (projects) => {
                 <button class="delete-btn font-medium text-red-600 hover:underline focus:outline-none" aria-label="${project.name}を削除">削除</button>
             </td>
         `;
-        domElements.projects_table_body.appendChild(row);
+        tableBody.appendChild(row);
     });
 };
