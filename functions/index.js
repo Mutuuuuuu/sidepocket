@@ -1,10 +1,11 @@
 const { onCall } = require("firebase-functions/v2/https");
 const { logger } = require("firebase-functions");
-const { google } = require("googleapis");
 
 // Google Calendarから予定を取得するCloud Function
-//【注意】この関数は雛形です。実際に動作させるには、OAuth2クライアントの設定やエラーハンドリングの実装が必要です。
 exports.getCalendarEvents = onCall(async (request) => {
+  // ライブラリの読み込みを関数内で行う
+  const { google } = require("googleapis");
+
   // 認証情報とリクエストデータを取り出す
   const { tokens, startDate, endDate } = request.data;
   if (!tokens) {
@@ -37,7 +38,8 @@ exports.getCalendarEvents = onCall(async (request) => {
     return { events };
 
   } catch (error) {
-    logger.error("Error fetching calendar events:", error);
-    throw new functions.https.HttpsError('internal', 'カレンダーの予定取得に失敗しました。');
+    logger.error("Error fetching calendar events:", error.message, error.stack);
+    // クライアントに返すエラーは具体的にしすぎない方が安全な場合もある
+    throw new functions.https.HttpsError('internal', 'カレンダーの予定取得に失敗しました。詳細はログを確認してください。');
   }
 });

@@ -12,14 +12,14 @@ export const initProjectsPage = (user) => {
     
     // ページに必要なDOM要素をまとめて取得
     const ids = [
-        'tableBody', 'projectModal', 'projectForm', 'modalTitle', 'statusFilter', 'projectId', 
-        'projectName', 'projectCode', 'isActive', 'isActiveLabel', 'contractType', 'unitPrice', 
-        'monthlyFixedRate', 'billingCycle', 'calculationMethod', 'billingStartDate', 'billingEndDate', 
-        'monthlyBaseHours', 'billingAdjustmentType', 'monthlyMinHours', 'monthlyMaxHours'
+        'projects-table-body', 'project-modal', 'project-form', 'modal-title', 'status-filter', 'project-id',
+        'project-name', 'project-code', 'project-is-active', 'is-active-label', 'contract-type', 'unit-price',
+        'monthly-fixed-rate', 'billing-cycle', 'calculation-method', 'billing-start-date', 'billing-end-date',
+        'monthly-base-hours', 'billing-adjustment-type', 'monthly-min-hours', 'monthly-max-hours'
     ];
+    // DOM要素をまとめて取得 (idをそのまま使用するように変更)
     ids.forEach(id => {
-        const snakeCaseId = id.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
-        domElements[id] = document.getElementById(snakeCaseId);
+        domElements[id.replace(/-/g, '_')] = document.getElementById(id);
     });
     
     // このページの要素がなければ(他のページでこのJSが誤って呼ばれても)処理を中断
