@@ -11,6 +11,20 @@
         body { font-family: 'Noto Sans JP', sans-serif; }
         .toggle-checkbox:checked + .toggle-label { background-color: #4f46e5; }
         .clickable-row:hover { background-color: #f9fafb; cursor: pointer; }
+        .project-details.hidden { display: none; }
+        th[data-sort-by] { cursor: pointer; }
+        th[data-sort-by]:hover { background-color: #f3f4f6; }
+        .sort-indicator {
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            text-align: center;
+            color: #9ca3af;
+        }
+        th.sort-asc .sort-indicator,
+        th.sort-desc .sort-indicator {
+            color: #1f2937;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -25,7 +39,20 @@
                 <div class="flex justify-between items-center mb-6"><h1 class="text-3xl font-bold text-gray-800">プロジェクト管理</h1><button id="open-add-project-modal" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">プロジェクト追加</button></div>
                 <div id="status-message-container"></div>
                 <div class="mb-4 flex items-center"><label for="status-filter" class="mr-2 text-sm font-medium text-gray-700">表示フィルター:</label><select id="status-filter" class="border-gray-300 rounded-md shadow-sm text-sm"><option value="active" selected>有効</option><option value="inactive">無効</option><option value="all">すべて</option></select></div>
-                <div class="bg-white rounded-xl shadow-md overflow-x-auto"><table class="w-full text-sm text-left text-gray-500"><thead class="text-xs text-gray-700 uppercase bg-gray-50"><tr><th scope="col" class="px-6 py-3">プロジェクト名</th><th scope="col" class="px-6 py-3">コード</th><th scope="col" class="px-6 py-3">ステータス</th><th scope="col" class="px-6 py-3 text-right">操作</th></tr></thead><tbody id="projects-table-body"></tbody></table></div>
+                <div class="bg-white rounded-xl shadow-md overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-500">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 w-2/5" data-sort-by="name">プロジェクト名 <span class="sort-indicator"></span></th>
+                                <th scope="col" class="px-6 py-3" data-sort-by="code">コード <span class="sort-indicator"></span></th>
+                                <th scope="col" class="px-6 py-3">ステータス</th>
+                                <th scope="col" class="px-6 py-3 text-right">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="projects-table-body">
+                            </tbody>
+                    </table>
+                </div>
             </main>
         </div>
     </div>
@@ -35,110 +62,110 @@
             <div class="fixed inset-0 bg-black bg-opacity-50 modal-overlay"></div>
             <div class="bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full z-50">
                 <form id="project-form">
-    <input type="hidden" id="project-id" name="id">
-    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">プロジェクトを追加</h3>
-        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-            <fieldset class="space-y-4">
-                <legend class="text-base font-medium text-gray-900 mb-2">基本情報</legend>
-                <div>
-                    <label for="project-name" class="block text-sm font-medium text-gray-700">プロジェクト名</label>
-                    <input type="text" id="project-name" name="name" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                </div>
-                <div>
-                    <label for="project-code" class="block text-sm font-medium text-gray-700">プロジェクトコード <span class="text-xs text-gray-500">(変更不可)</span></label>
-                    <input type="text" id="project-code" name="code" required pattern="^[a-zA-Z0-9\-]+$" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">ステータス</label>
-                    <div class="mt-2 flex items-center">
-                        <div class="relative inline-block w-10 mr-2 align-middle select-none">
-                            <input type="checkbox" id="project-is-active" name="isActive" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
-                            <label for="project-is-active" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                    <input type="hidden" id="project-id" name="id">
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">プロジェクトを追加</h3>
+                        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                            <fieldset class="space-y-4">
+                                <legend class="text-base font-medium text-gray-900 mb-2">基本情報</legend>
+                                <div>
+                                    <label for="project-name" class="block text-sm font-medium text-gray-700">プロジェクト名</label>
+                                    <input type="text" id="project-name" name="name" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                                <div>
+                                    <label for="project-code" class="block text-sm font-medium text-gray-700">プロジェクトコード <span class="text-xs text-gray-500">(変更不可)</span></label>
+                                    <input type="text" id="project-code" name="code" required pattern="^[a-zA-Z0-9\-]+$" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">ステータス</label>
+                                    <div class="mt-2 flex items-center">
+                                        <div class="relative inline-block w-10 mr-2 align-middle select-none">
+                                            <input type="checkbox" id="project-is-active" name="isActive" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                                            <label for="project-is-active" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                                        </div>
+                                        <span id="is-active-label" class="text-gray-700 text-sm">無効</span>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="billing-start-date" class="block text-sm font-medium text-gray-700">契約開始日</label>
+                                        <input type="date" id="billing-start-date" name="billingStartDate" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                    </div>
+                                    <div>
+                                        <label for="billing-end-date" class="block text-sm font-medium text-gray-700">契約終了日</label>
+                                        <input type="date" id="billing-end-date" name="billingEndDate" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                    </div>
+                                </div>
+                            </fieldset>
+                            <fieldset class="space-y-4 border-t md:border-t-0 md:border-l pt-4 md:pt-0 md:pl-6">
+                                <legend class="text-base font-medium text-gray-900 mb-2">契約・報酬設定</legend>
+                                <div>
+                                    <label for="contract-type" class="block text-sm font-medium text-gray-700">契約タイプ</label>
+                                    <select id="contract-type" name="contractType" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                        <option value="hourly">時間単価</option>
+                                        <option value="monthly">月額固定</option>
+                                    </select>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="unit-price" class="block text-sm font-medium text-gray-700">時給単価</label>
+                                        <input type="number" id="unit-price" name="unitPrice" min="0" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                    </div>
+                                    <div>
+                                        <label for="monthly-fixed-rate" class="block text-sm font-medium text-gray-700">固定単価</label>
+                                        <input type="number" id="monthly-fixed-rate" name="monthlyFixedRate" min="0" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="monthly-base-hours" class="block text-sm font-medium text-gray-700">基準稼働時間(月)</label>
+                                        <input type="number" id="monthly-base-hours" name="monthlyBaseHours" min="0" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                    </div>
+                                    <div>
+                                        <label for="billing-adjustment-type" class="block text-sm font-medium text-gray-700">稼働調整</label>
+                                        <select id="billing-adjustment-type" name="billingAdjustmentType" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                            <option value="per_item">明細で調整</option>
+                                            <option value="monthly_total">月次合計で調整</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="monthly-min-hours" class="block text-sm font-medium text-gray-700">固定報酬の対象時間(下限)</label>
+                                        <input type="number" id="monthly-min-hours" name="monthlyMinHours" min="0" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" placeholder="例: 140">
+                                    </div>
+                                    <div>
+                                        <label for="monthly-max-hours" class="block text-sm font-medium text-gray-700">固定報酬の対象時間(上限)</label>
+                                        <input type="number" id="monthly-max-hours" name="monthlyMaxHours" min="0" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" placeholder="例: 180">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="billing-cycle" class="block text-sm font-medium text-gray-700">稼働単位 (分)</label>
+                                        <select id="billing-cycle" name="billingCycle" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                            <option value="1">1</option>
+                                            <option value="15">15</option>
+                                            <option value="30">30</option>
+                                            <option value="60">60</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="calculation-method" class="block text-sm font-medium text-gray-700">端数処理</label>
+                                        <select id="calculation-method" name="calculationMethod" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                            <option value="floor">切り捨て</option>
+                                            <option value="round">四捨五入</option>
+                                            <option value="ceil">切り上げ</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </fieldset>
                         </div>
-                        <span id="is-active-label" class="text-gray-700 text-sm">無効</span>
                     </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="billing-start-date" class="block text-sm font-medium text-gray-700">契約開始日</label>
-                        <input type="date" id="billing-start-date" name="billingStartDate" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 sm:ml-3 sm:w-auto sm:text-sm">保存</button>
+                        <button type="button" class="modal-cancel-button mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:w-auto sm:text-sm">キャンセル</button>
                     </div>
-                    <div>
-                        <label for="billing-end-date" class="block text-sm font-medium text-gray-700">契約終了日</label>
-                        <input type="date" id="billing-end-date" name="billingEndDate" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                    </div>
-                </div>
-            </fieldset>
-            <fieldset class="space-y-4 border-t md:border-t-0 md:border-l pt-4 md:pt-0 md:pl-6">
-                <legend class="text-base font-medium text-gray-900 mb-2">契約・報酬設定</legend>
-                <div>
-                    <label for="contract-type" class="block text-sm font-medium text-gray-700">契約タイプ</label>
-                    <select id="contract-type" name="contractType" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                        <option value="hourly">時間単価</option>
-                        <option value="monthly">月額固定</option>
-                    </select>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="unit-price" class="block text-sm font-medium text-gray-700">時給単価</label>
-                        <input type="number" id="unit-price" name="unitPrice" min="0" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                    </div>
-                    <div>
-                        <label for="monthly-fixed-rate" class="block text-sm font-medium text-gray-700">固定単価</label>
-                        <input type="number" id="monthly-fixed-rate" name="monthlyFixedRate" min="0" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="monthly-base-hours" class="block text-sm font-medium text-gray-700">基準稼働時間(月)</label>
-                        <input type="number" id="monthly-base-hours" name="monthlyBaseHours" min="0" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                    </div>
-                    <div>
-                        <label for="billing-adjustment-type" class="block text-sm font-medium text-gray-700">稼働調整</label>
-                        <select id="billing-adjustment-type" name="billingAdjustmentType" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                            <option value="per_item">明細で調整</option>
-                            <option value="monthly_total" disabled>月次合計で調整(未)</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="monthly-min-hours" class="block text-sm font-medium text-gray-700">清算幅(下限)</label>
-                        <input type="number" id="monthly-min-hours" name="monthlyMinHours" min="0" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                    </div>
-                    <div>
-                        <label for="monthly-max-hours" class="block text-sm font-medium text-gray-700">清算幅(上限)</label>
-                        <input type="number" id="monthly-max-hours" name="monthlyMaxHours" min="0" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="billing-cycle" class="block text-sm font-medium text-gray-700">稼働単位 (分)</label>
-                        <select id="billing-cycle" name="billingCycle" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                            <option value="1">1</option>
-                            <option value="15">15</option>
-                            <option value="30">30</option>
-                            <option value="60">60</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="calculation-method" class="block text-sm font-medium text-gray-700">端数処理</label>
-                        <select id="calculation-method" name="calculationMethod" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                            <option value="floor">切り捨て</option>
-                            <option value="round">四捨五入</option>
-                            <option value="ceil">切り上げ</option>
-                        </select>
-                    </div>
-                </div>
-            </fieldset>
-        </div>
-    </div>
-    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 sm:ml-3 sm:w-auto sm:text-sm">保存</button>
-        <button type="button" class="modal-cancel-button mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:w-auto sm:text-sm">キャンセル</button>
-    </div>
-</form>
+                </form>
             </div>
         </div>
     </div>

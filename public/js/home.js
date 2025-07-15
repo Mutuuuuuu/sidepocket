@@ -9,7 +9,7 @@ let projects = [];
 let punchButton, punchStatusDisplay, punchProjectDisplay, recordsContainer;
 let projectSelectionArea, projectSelectMain, liveClockElement;
 
-export const initHomePage = (user) => {
+export const initHomePage = async (user) => { // asyncを追加
     if (!user) return;
     currentUser = user;
 
@@ -22,20 +22,29 @@ export const initHomePage = (user) => {
     projectSelectMain = document.getElementById('project-select-main');
     liveClockElement = document.getElementById('live-clock');
 
-    // home.html以外のページでスクリプトが呼ばれた場合、要素がないので処理を中断
     if (!punchButton) return;
 
     // イベントリスナーを設定
     punchButton.addEventListener('click', handlePunchButtonClick);
-
-    // データの読み込みと監視を開始
-    loadActiveProjects();
-    listenForActiveClockIn();
-    listenForRecentRecords();
     
     // 時計の表示を開始
     updateClock();
     setInterval(updateClock, 1000);
+    
+    // ▼▼▼ 修正箇所 ▼▼▼
+    // 全てのデータ読み込みを待ってからローディングを解除
+    try {
+        await Promise.all([
+            loadActiveProjects(),
+            listenForActiveClockIn(),
+            listenForRecentRecords()
+        ]);
+    } catch (error) {
+        console.error("ホームページの初期化中にエラーが発生しました:", error);
+        showStatus('ページの読み込みに失敗しました。', true);
+    } finally {
+        toggleLoading(false); // 全ての処理が終わった後にローディングを解除
+    }
 };
 
 const updateClock = () => {
@@ -44,32 +53,50 @@ const updateClock = () => {
     }
 };
 
+// ▼▼▼ 修正箇所 ▼▼▼
+// Promiseを返すように変更
 const loadActiveProjects = () => {
-    getProjects(currentUser.uid, 'active', (activeProjects) => {
-        projects = activeProjects;
-        if (projectSelectMain) {
-            projectSelectMain.innerHTML = projects.length === 0 
-                ? '<option value="">打刻可能なプロジェクトがありません</option>' 
-                : '<option value="">プロジェクトを選択してください</option>';
-            
-            projects.forEach(p => {
-                projectSelectMain.innerHTML += `<option value="${p.id}">${p.name}</option>`;
-            });
-        }
+    return new Promise((resolve) => {
+        const unsubscribe = getProjects(currentUser.uid, 'active', (activeProjects) => {
+            projects = activeProjects;
+            if (projectSelectMain) {
+                projectSelectMain.innerHTML = projects.length === 0 
+                    ? '<option value="">打刻可能なプロジェクトがありません</option>' 
+                    : '<option value="">プロジェクトを選択してください</option>';
+                
+                projects.forEach(p => {
+                    projectSelectMain.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+                });
+            }
+            // この関数は継続的に監視するため、初回取得時に resolve する
+            resolve();
+        });
     });
 };
 
+// ▼▼▼ 修正箇所 ▼▼▼
+// Promiseを返すように変更
 const listenForActiveClockIn = () => {
-    getActiveClockIn(currentUser.uid, (doc) => {
-        activeClockInDoc = doc;
-        updatePunchUI(doc);
-        toggleLoading(false);
+    return new Promise((resolve) => {
+        getActiveClockIn(currentUser.uid, (doc) => {
+            activeClockInDoc = doc;
+            updatePunchUI(doc);
+            resolve();
+        });
     });
 };
 
+// ▼▼▼ 修正箇所 ▼▼▼
+// Promiseを返すように変更
 const listenForRecentRecords = () => {
-    getRecentTimestamps(currentUser.uid, 5, renderPunchRecords);
+    return new Promise((resolve) => {
+        getRecentTimestamps(currentUser.uid, 5, (records) => {
+            renderPunchRecords(records);
+            resolve();
+        });
+    });
 };
+
 
 const handlePunchButtonClick = async () => {
     punchButton.disabled = true;
@@ -121,18 +148,24 @@ const renderPunchRecords = (records) => {
     recordsContainer.innerHTML = records.length === 0 ? '<li class="p-4 text-center text-gray-500">稼働履歴はありません。</li>' : '';
     records.forEach(record => {
         const li = document.createElement('li');
-        li.className = 'px-4 py-3 flex items-center justify-between';
+        li.className = 'px-4 py-3 flex items-center justify-between text-sm';
+        
         const clockIn = record.clockInTime ? record.clockInTime.toDate().toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
         const clockOut = record.clockOutTime ? record.clockOutTime.toDate().toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'}) : '...';
         const typeText = record.status === 'active' ? '出勤中' : '完了';
         const typeColor = record.status === 'active' ? 'text-green-600' : 'text-gray-500';
+
         li.innerHTML = `
-            <div class="flex items-center space-x-4 flex-grow">
-                <span class="font-semibold text-gray-800 w-40 truncate">${record.project.name}</span>
-                <span class="text-sm ${typeColor} w-16 text-center">${typeText}</span>
+            <div class="flex-1 truncate pr-4">
+                <span class="font-semibold text-gray-800">${record.project.name}</span>
             </div>
-            <div class="text-sm text-gray-600 text-right flex-shrink-0">
-                <span>${clockIn}</span><span class="mx-1">-</span><span>${clockOut}</span>
+            <div class="flex items-center flex-shrink-0">
+                <span class="w-12 text-center text-xs ${typeColor}">${typeText}</span>
+                <div class="w-40 text-right text-xs text-gray-600 ml-2" style="font-feature-settings: 'tnum';">
+                    <span>${clockIn}</span>
+                    <span class="mx-1">-</span>
+                    <span>${clockOut}</span>
+                </div>
             </div>
         `;
         recordsContainer.appendChild(li);

@@ -1,91 +1,229 @@
 import { getProjects, getTimestampsForPeriod } from './services/firestoreService.js';
 import { toggleLoading, showStatus } from './services/uiService.js';
 import { exportToCsv } from './utils/csvExporter.js';
-import { exportToPdf } from './utils/pdfExporter.js';
 
 let currentUser;
 let allTimestamps = [];
+let allProjects = [];
 const chartInstances = {};
 
-let startMonthInput, endMonthInput, updateGraphButton, tableProjectFilter;
-let lineChartCanvas, tableBody, totalDurationSpan, totalRewardSpan;
+let startMonthInput, endMonthInput, updateSummaryButton, tableProjectFilter;
+let lineChartCanvas, tableBody, totalDurationSpan, totalRewardSpan, monthlySummaryTableBody, csvButton;
 
 export const initSummaryPage = async (user) => {
     currentUser = user;
     lineChartCanvas = document.getElementById('monthly-line-chart');
-    if (!lineChartCanvas) return;
+    if (!lineChartCanvas) {
+        console.error("サマリーページの必須要素が見つかりません。処理を中断します。");
+        return;
+    }
+
     startMonthInput = document.getElementById('graph-start-month');
     endMonthInput = document.getElementById('graph-end-month');
-    updateGraphButton = document.getElementById('update-graph-button');
+    updateSummaryButton = document.getElementById('update-summary-button');
     tableProjectFilter = document.getElementById('table-project-filter');
     tableBody = document.getElementById('timestamps-table-body');
     totalDurationSpan = document.getElementById('total-duration');
     totalRewardSpan = document.getElementById('total-reward');
+    monthlySummaryTableBody = document.getElementById('monthly-summary-table-body');
+    csvButton = document.getElementById('generate-csv-button');
 
-    updateGraphButton.addEventListener('click', () => fetchAndRenderData());
-    tableProjectFilter.addEventListener('change', renderTable);
-    document.getElementById('generate-csv-button').addEventListener('click', handleCsvExport);
-    document.getElementById('generate-pdf-button').addEventListener('click', handlePdfExport);
+    if(updateSummaryButton) updateSummaryButton.addEventListener('click', fetchAndRenderData);
+    if(tableProjectFilter) tableProjectFilter.addEventListener('change', renderAllTables);
+    if(csvButton) csvButton.addEventListener('click', handleCsvExport);
     
     await populateProjectFilter();
-    const { initialStartDate, initialEndDate } = setInitialDateRange();
-    await fetchAndRenderData(initialStartDate, initialEndDate);
+    setInitialDateRange();
+    await fetchAndRenderData();
 };
 
-const populateProjectFilter = () => {
+const populateProjectFilter = async () => {
     return new Promise(resolve => {
-        const unsubscribe = getProjects(currentUser.uid, 'all', (projects) => {
-            if (!tableProjectFilter) return;
+        getProjects(currentUser.uid, 'all', (projects) => {
+            allProjects = projects;
+            if (!tableProjectFilter) return resolve();
             tableProjectFilter.innerHTML = '<option value="all">すべてのプロジェクト</option>';
             projects.forEach(p => {
                 tableProjectFilter.innerHTML += `<option value="${p.code}">${p.name}</option>`;
             });
-            unsubscribe();
             resolve();
         });
     });
 };
 
 const setInitialDateRange = () => {
+    if (!startMonthInput || !endMonthInput) return;
     const today = new Date();
     const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
     const start = new Date(today.getFullYear(), today.getMonth() - 2, 1);
     endMonthInput.value = `${end.getFullYear()}-${(end.getMonth() + 1).toString().padStart(2, '0')}`;
     startMonthInput.value = `${start.getFullYear()}-${(start.getMonth() + 1).toString().padStart(2, '0')}`;
-    return { initialStartDate: start, initialEndDate: new Date(end.getFullYear(), end.getMonth() + 1, 1) };
 };
 
-const fetchAndRenderData = async (argStartDate, argEndDate) => {
+const fetchAndRenderData = async () => {
     toggleLoading(true);
-    let startDate, endDate;
-    if (argStartDate && argEndDate) {
-        startDate = argStartDate;
-        endDate = argEndDate;
-    } else {
-        if (!startMonthInput.value || !endMonthInput.value) {
-            showStatus('開始月と終了月を指定してください。', true);
-            toggleLoading(false); return;
-        }
-        const [startYear, startMonth] = startMonthInput.value.split('-').map(Number);
-        const [endYear, endMonth] = endMonthInput.value.split('-').map(Number);
-        startDate = new Date(startYear, startMonth - 1, 1);
-        endDate = new Date(endYear, endMonth, 1);
-    }
-    
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        showStatus('日付の形式が無効です。', true);
+    if (!startMonthInput?.value || !endMonthInput?.value) {
+        showStatus('開始月と終了月を指定してください。', true);
         toggleLoading(false); return;
     }
+    const [startYear, startMonth] = startMonthInput.value.split('-').map(Number);
+    const [endYear, endMonth] = endMonthInput.value.split('-').map(Number);
+    const startDate = new Date(startYear, startMonth - 1, 1);
+    const endDate = new Date(endYear, endMonth, 1);
+    
     try {
         allTimestamps = await getTimestampsForPeriod(currentUser.uid, startDate, endDate);
         renderMonthlyLineChart(allTimestamps, startDate, endDate);
-        await renderTable();
+        renderAllTables();
     } catch (error) {
         showStatus('データの取得に失敗しました。', true);
         console.error(error);
     } finally {
         toggleLoading(false);
     }
+};
+
+const calculateBilledHours = (actualHours, projectSettings) => {
+    if (!projectSettings) return actualHours;
+    const { billingCycle = 1, calculationMethod = 'floor' } = projectSettings;
+    const actualMinutes = actualHours * 60;
+    let billedMinutes;
+    switch (calculationMethod) {
+        case 'ceil': billedMinutes = Math.ceil(actualMinutes / billingCycle) * billingCycle; break;
+        case 'round': billedMinutes = Math.round(actualMinutes / billingCycle) * billingCycle; break;
+        default: billedMinutes = Math.floor(actualMinutes / billingCycle) * billingCycle;
+    }
+    return billedMinutes / 60;
+};
+
+const renderAllTables = () => {
+    const selectedProjectCode = tableProjectFilter?.value || 'all';
+    const filteredTimestamps = (selectedProjectCode === 'all' ? allTimestamps : allTimestamps.filter(t => t.project.code === selectedProjectCode));
+    
+    const processedData = filteredTimestamps.map(ts => {
+        const project = allProjects.find(p => p.code === ts.project.code);
+        const actualHours = ts.durationHours || 0;
+        let billedHours = actualHours;
+        if (project && project.billingAdjustmentType === 'per_item') {
+            billedHours = calculateBilledHours(actualHours, project);
+        }
+        return { ...ts, actualHours, billedHours };
+    });
+
+    renderDetailedTable(processedData);
+    renderSummaryTable(processedData);
+};
+
+const renderDetailedTable = (processedData) => {
+    if (!tableBody) return;
+    tableBody.innerHTML = '';
+    
+    if (processedData.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="6" class="text-center p-8 text-gray-500">対象の稼働実績はありません。</td></tr>';
+        return;
+    }
+    
+    processedData.sort((a,b) => b.clockInTime.toDate() - a.clockInTime.toDate()).forEach(data => {
+        const clockInDate = data.clockInTime.toDate();
+        const clockOutDate = data.clockOutTime ? data.clockOutTime.toDate() : null;
+
+        tableBody.innerHTML += `
+            <tr class="bg-white border-b hover:bg-gray-50">
+                <td class="px-6 py-4">${clockInDate.toLocaleDateString('ja-JP')}</td>
+                <td class="px-6 py-4">${data.project.name}</td>
+                <td class="px-6 py-4">${clockInDate.toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'})}</td>
+                <td class="px-6 py-4">${clockOutDate ? clockOutDate.toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'}) : ''}</td>
+                <td class="px-6 py-4 text-right">${data.actualHours.toFixed(2)}</td>
+                <td class="px-6 py-4 text-right">${data.billedHours.toFixed(2)}</td>
+            </tr>`;
+    });
+};
+
+const renderSummaryTable = (processedData) => {
+    if (!monthlySummaryTableBody || !totalDurationSpan || !totalRewardSpan) return;
+    monthlySummaryTableBody.innerHTML = '';
+
+    const summary = {};
+    processedData.forEach(data => {
+        if (!summary[data.project.code]) {
+            summary[data.project.code] = {
+                name: data.project.name,
+                totalActualHours: 0,
+                projectSettings: allProjects.find(p => p.code === data.project.code)
+            };
+        }
+        summary[data.project.code].totalActualHours += data.actualHours;
+    });
+
+    let grandTotalBilledHours = 0;
+    let grandTotalReward = 0;
+
+    Object.values(summary).forEach(proj => {
+        let totalBilledHours = 0;
+        let totalReward = 0;
+        const settings = proj.projectSettings;
+
+        if (settings) {
+            if (settings.billingAdjustmentType === 'monthly_total') {
+                totalBilledHours = calculateBilledHours(proj.totalActualHours, settings);
+            } else {
+                totalBilledHours = processedData.filter(d => d.project.code === settings.code).reduce((sum, d) => sum + d.billedHours, 0);
+            }
+
+            if (settings.contractType === 'monthly') {
+                if (proj.totalActualHours >= (settings.monthlyMinHours || 0) && proj.totalActualHours <= (settings.monthlyMaxHours || Infinity)) {
+                    totalReward = settings.monthlyFixedRate || 0;
+                } else {
+                    totalReward = totalBilledHours * (settings.unitPrice || 0);
+                }
+            } else {
+                totalReward = totalBilledHours * (settings.unitPrice || 0);
+            }
+        }
+        grandTotalBilledHours += totalBilledHours;
+        grandTotalReward += totalReward;
+
+        monthlySummaryTableBody.innerHTML += `
+            <tr class="bg-white border-b">
+                <td class="px-6 py-4 font-medium text-gray-900">${proj.name}</td>
+                <td class="px-6 py-4 text-right">${proj.totalActualHours.toFixed(2)}</td>
+                <td class="px-6 py-4 text-right">${totalBilledHours.toFixed(2)}</td>
+                <td class="px-6 py-4 text-right font-semibold">¥${Math.round(totalReward).toLocaleString()}</td>
+            </tr>
+        `;
+    });
+
+    totalDurationSpan.textContent = grandTotalBilledHours.toFixed(2);
+    totalRewardSpan.textContent = `¥${Math.round(grandTotalReward).toLocaleString()}`;
+};
+
+const handleCsvExport = () => {
+    const selectedProjectCode = tableProjectFilter?.value || 'all';
+    const filteredTimestamps = (selectedProjectCode === 'all' ? allTimestamps : allTimestamps.filter(t => t.project.code === selectedProjectCode));
+    
+    const dataForExport = filteredTimestamps.map(ts => {
+        const project = allProjects.find(p => p.code === ts.project.code);
+        const actualHours = ts.durationHours || 0;
+        let billedHours = actualHours;
+        if (project && project.billingAdjustmentType === 'per_item') {
+            billedHours = calculateBilledHours(actualHours, project);
+        }
+        
+        return {
+            date: ts.clockInTime.toDate().toLocaleDateString('ja-JP'),
+            project: ts.project.name, clockIn: ts.clockInTime.toDate().toLocaleTimeString('ja-JP'),
+            clockOut: ts.clockOutTime ? ts.clockOutTime.toDate().toLocaleTimeString('ja-JP') : '',
+            actualHours: actualHours.toFixed(2), billedHours: billedHours.toFixed(2),
+        };
+    }).sort((a, b) => new Date(b.date + ' ' + b.clockIn) - new Date(a.date + ' ' + a.clockIn));
+
+    const headers = {
+        date: '日付', project: 'プロジェクト', clockIn: '出勤', clockOut: '退勤',
+        actualHours: '実稼働(h)', billedHours: '実績(h)'
+    };
+    const date = new Date();
+    const formattedDate = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
+    exportToCsv(dataForExport, headers, `sidepocket-summary-${formattedDate}.csv`);
 };
 
 const renderMonthlyLineChart = (timestamps, chartStartDate, chartEndDate) => {
@@ -119,90 +257,9 @@ const renderMonthlyLineChart = (timestamps, chartStartDate, chartEndDate) => {
     chartInstances.line = new Chart(ctx, {
         type: 'line',
         data: { labels, datasets },
-        options: { scales: { y: { beginAtZero: true, ticks: { callback: value => `${value}h` } } } }
-    });
-};
-
-const renderTable = async () => {
-    if (!tableBody) return;
-    let projects = [];
-    await new Promise(resolve => {
-        const unsubscribe = getProjects(currentUser.uid, 'all', projs => {
-            projects = projs;
-            unsubscribe();
-            resolve();
-        });
-    });
-    const selectedProjectCode = tableProjectFilter.value;
-    const filteredTimestamps = (selectedProjectCode === 'all' ? allTimestamps : allTimestamps.filter(t => t.project.code === selectedProjectCode));
-    const monthlyGroups = {};
-    filteredTimestamps.forEach(ts => {
-        const d = ts.clockInTime.toDate();
-        const monthKey = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
-        if (!monthlyGroups[monthKey]) monthlyGroups[monthKey] = {};
-        if (!monthlyGroups[monthKey][ts.project.code]) {
-            monthlyGroups[monthKey][ts.project.code] = { totalHours: 0, timestamps: [] };
+        options: {
+            scales: { y: { beginAtZero: true, ticks: { callback: value => `${value}h` } } },
+            maintainAspectRatio: false,
         }
-        monthlyGroups[monthKey][ts.project.code].totalHours += ts.durationHours || 0;
-        monthlyGroups[monthKey][ts.project.code].timestamps.push(ts);
     });
-    let finalTimestamps = [];
-    Object.values(monthlyGroups).forEach(projectGroups => {
-        Object.values(projectGroups).forEach(group => {
-            const projectInfo = projects.find(p => p.code === group.timestamps[0].project.code);
-            let monthlyReward = 0;
-            if (projectInfo && projectInfo.contractType === 'monthly' && group.totalHours >= (projectInfo.monthlyMinHours || 0) && group.totalHours <= (projectInfo.monthlyMaxHours || Infinity)) {
-                monthlyReward = projectInfo.monthlyFixedRate || 0;
-            }
-            group.timestamps.forEach(ts => {
-                let reward = 0;
-                if (monthlyReward > 0) {
-                    reward = (ts.durationHours / group.totalHours) * monthlyReward;
-                } else {
-                    reward = calculateHourlyReward(ts.durationHours || 0, projectInfo);
-                }
-                finalTimestamps.push({ ...ts, reward });
-            });
-        });
-    });
-    tableBody.innerHTML = '<tr><td colspan="6" class="text-center p-8">対象の稼働実績はありません。</td></tr>';
-    totalDurationSpan.textContent = '0.00';
-    if(totalRewardSpan) totalRewardSpan.textContent = '¥0';
-    if (finalTimestamps.length > 0) {
-        tableBody.innerHTML = '';
-        let grandTotalDuration = 0, grandTotalReward = 0;
-        finalTimestamps.sort((a,b) => b.clockInTime.toDate() - a.clockInTime.toDate()).forEach(ts => {
-            grandTotalDuration += ts.durationHours || 0;
-            grandTotalReward += ts.reward || 0;
-            const clockInDate = new Date(ts.clockInTime.toDate());
-            const clockOutDate = ts.clockOutTime ? new Date(ts.clockOutTime.toDate()) : null;
-            tableBody.innerHTML += `
-                <tr class="bg-white border-b hover:bg-gray-50">
-                    <td class="px-6 py-4">${clockInDate.toLocaleDateString('ja-JP')}</td>
-                    <td class="px-6 py-4">${ts.project.name}</td>
-                    <td class="px-6 py-4">${clockInDate.toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'})}</td>
-                    <td class="px-6 py-4">${clockOutDate ? clockOutDate.toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'}) : ''}</td>
-                    <td class="px-6 py-4 text-right">${(ts.durationHours || 0).toFixed(2)}</td>
-                    <td class="px-6 py-4 text-right font-semibold">¥${Math.round(ts.reward || 0).toLocaleString()}</td>
-                </tr>`;
-        });
-        totalDurationSpan.textContent = grandTotalDuration.toFixed(2);
-        if(totalRewardSpan) totalRewardSpan.textContent = `¥${Math.round(grandTotalReward).toLocaleString()}`;
-    }
 };
-
-function calculateHourlyReward(durationHours, project) {
-    if (!project || project.contractType !== 'hourly' || !project.unitPrice) return 0;
-    const { unitPrice, billingCycle = 1, calculationMethod = 'floor' } = project;
-    const durationMinutes = durationHours * 60;
-    let calculatedMinutes;
-    switch (calculationMethod) {
-        case 'ceil': calculatedMinutes = Math.ceil(durationMinutes / billingCycle) * billingCycle; break;
-        case 'round': calculatedMinutes = Math.round(durationMinutes / billingCycle) * billingCycle; break;
-        default: calculatedMinutes = Math.floor(durationMinutes / billingCycle) * billingCycle;
-    }
-    return (calculatedMinutes / 60) * unitPrice;
-}
-
-const handlePdfExport = () => { /* ... */ };
-const handleCsvExport = () => { /* ... */ };

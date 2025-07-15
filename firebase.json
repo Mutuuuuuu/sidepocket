@@ -1,9 +1,36 @@
 {
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/index.html",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/signup.html",
+        "destination": "/signup.html"
+      },
+      {
+        "source": "/login.html",
+        "destination": "/login.html"
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
   "firestore": {
-    "database": "(default)",
-    "location": "asia-northeast1",
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
   },
   "functions": [
     {
@@ -17,22 +44,5 @@
         "*.local"
       ]
     }
-  ],
-  "hosting": {
-    "public": "public",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ]
-  },
-  "storage": {
-    "rules": "storage.rules"
-  }
+  ]
 }
