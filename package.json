@@ -1,0 +1,11 @@
+{
+  "name": "sidepocket",
+  "version": "1.0.0",
+  "scripts": {
+    "build:css": "tailwindcss -i ./public/css/input.css -o ./public/css/style.css",
+    "watch:css": "tailwindcss -i ./public/css/input.css -o ./public/css/style.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.1"
+  }
+}

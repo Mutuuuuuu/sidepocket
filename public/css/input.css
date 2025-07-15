@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+    /* サイドバーが開いているときのスタイル定義 */
+    #app-container.sidebar-open #sidebar { @apply w-64; }
+    #app-container.sidebar-open #content-container { @apply md:ml-64; }
+    #app-container.sidebar-open .sidebar-text { @apply opacity-100; }
+    #app-container.sidebar-open #logo-symbol { @apply hidden; }
+    #app-container.sidebar-open #logo-full { @apply block; }
+
+    /* モバイルでサイドバーが開いているとき */
+    #app-container.sidebar-mobile-open #sidebar { @apply -translate-x-0; }
+    #app-container.sidebar-mobile-open #sidebar-overlay { @apply block; }
+}

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>稼働実績サマリー - sidepocket</title>
+    <link rel="icon" href="images/sidepocket_symbol.png">
+    <link href="css/style.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment/locale/ja.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <style> body { font-family: 'Noto Sans JP', sans-serif; } </style>
+</head>
+<body class="bg-gray-100">
+    <div id="loading-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center z-50"><div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div></div>
+    <div id="app-container" class="relative min-h-screen md:flex opacity-0">
+        <div id="header-placeholder"></div>
+        <div id="content-container" class="relative md:ml-20 transition-all duration-300 ease-in-out flex-1 flex flex-col">
+            <header class="flex justify-end items-center p-4 bg-white border-b sticky top-0 z-10">
+                 <div class="flex items-center"><span id="header-display-name" class="text-gray-700 mr-4 hidden sm:inline">Guest</span><a href="/profile.html"><img id="header-user-icon" class="h-10 w-10 rounded-full object-cover" src="images/sidepocket_symbol.png" alt="User icon"></a></div>
+            </header>
+            <main class="p-6 md:p-8 flex-1 overflow-y-auto">
+                <h1 class="text-3xl font-bold text-gray-800 mb-6">稼働実績サマリー</h1>
+                <div id="status-message-container"></div>
+                <div class="bg-white p-4 rounded-xl shadow-md mb-8 flex flex-wrap items-center gap-4">
+                    <div class="flex-1 min-w-[150px]"><label for="graph-start-month" class="block text-sm font-medium text-gray-700">グラフ開始月</label><input type="month" id="graph-start-month" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></div>
+                    <div class="flex-1 min-w-[150px]"><label for="graph-end-month" class="block text-sm font-medium text-gray-700">グラフ終了月</label><input type="month" id="graph-end-month" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></div>
+                    <div class="self-end"><button id="update-graph-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">グラフ更新</button></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md mb-8">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">月別プロジェクト稼働時間</h2>
+                    <canvas id="monthly-line-chart"></canvas>
+                </div>
+                <div class="bg-white rounded-xl shadow-md overflow-x-auto">
+                    <div class="flex flex-wrap justify-between items-center p-6">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4 sm:mb-0">詳細タイムスタンプ一覧</h2>
+                        <div class="flex items-center gap-4">
+                            <div class="min-w-[150px]"><label for="table-project-filter" class="block text-sm font-medium text-gray-700">プロジェクトフィルター</label><select id="table-project-filter" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"><option value="all">すべてのプロジェクト</option></select></div>
+                            <div class="self-end flex gap-2">
+                                <button id="generate-csv-button" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">CSV出力</button>
+                                <button id="generate-pdf-button" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">PDF出力</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-6 pb-6 text-right"><p class="text-lg font-bold text-gray-800">表示中の合計: <span id="total-duration">0.00</span> h / <span id="total-reward">¥0</span></p></div>
+                    <table class="w-full text-sm text-left text-gray-500">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50"><tr><th scope="col" class="px-6 py-3">日付</th><th scope="col" class="px-6 py-3">プロジェクト</th><th scope="col" class="px-6 py-3">出勤</th><th scope="col" class="px-6 py-3">退勤</th><th scope="col" class="px-6 py-3 text-right">稼働時間(h)</th><th scope="col" class="px-6 py-3 text-right">報酬</th></tr></thead>
+                        <tbody id="timestamps-table-body"></tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+    </div>
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

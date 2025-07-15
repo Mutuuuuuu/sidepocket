@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新規登録 - sidepocket</title>
+    <link rel="icon" href="images/sidepocket_symbol.png">
+    <link href="css/style.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Noto Sans JP', sans-serif; } </style>
+</head>
+<body class="bg-gray-50">
+
+    <div id="loading-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center z-50 hidden">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+    </div>
+
+    <div class="min-h-screen flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8">
+            <div>
+                <img class="mx-auto h-12 w-auto" src="images/sidepocket_Logo.png" alt="sidepocket Logo">
+                <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                    新規アカウント登録
+                </h2>
+            </div>
+
+            <div id="status-message-container"></div>
+
+            <form id="signup-form" class="mt-8 space-y-6">
+                <div class="rounded-md shadow-sm -space-y-px">
+                    <div>
+                        <label for="display-name" class="sr-only">表示名</label>
+                        <input id="display-name" name="displayName" type="text" required class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="表示名">
+                    </div>
+                    <div>
+                        <label for="email-address" class="sr-only">メールアドレス</label>
+                        <input id="email-address" name="email" type="email" autocomplete="email" required class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="メールアドレス">
+                    </div>
+                    <div>
+                        <label for="password" class="sr-only">パスワード</label>
+                        <input id="password" name="password" type="password" required class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="パスワード (6文字以上)">
+                    </div>
+                    <div>
+                        <label for="password-confirm" class="sr-only">パスワード（確認用）</label>
+                        <input id="password-confirm" name="passwordConfirm" type="password" required class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="パスワード（確認用）">
+                    </div>
+                </div>
+
+                <div class="flex items-center">
+                    <input id="terms-agree" name="terms" type="checkbox" required class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                    <label for="terms-agree" class="ml-2 block text-sm text-gray-900">
+                        <a href="#" class="text-indigo-600 hover:underline">利用規約</a>に同意します
+                    </label>
+                </div>
+
+                <div>
+                    <button type="submit" class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        登録する
+                    </button>
+                </div>
+            </form>
+
+            <div class="text-sm text-center">
+                <a href="login.html" class="font-medium text-indigo-600 hover:text-indigo-500">
+                    すでにアカウントをお持ちですか？ ログイン
+                </a>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
