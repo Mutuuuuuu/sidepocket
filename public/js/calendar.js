@@ -4,10 +4,8 @@ import { getProjects, addCalendarEventsAsTimestamps } from './services/firestore
 import { toggleLoading, showStatus } from './services/uiService.js';
 
 // --- Google API & OAuth 関連 ---
-// 注: このクライアントIDは、Google Cloud Consoleで作成した自身のものに置き換えてください。
-//     Firebaseの環境変数に設定し、Cloud Functions経由で取得するのがより安全です。
-const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com'; 
-const GOOGLE_API_KEY = 'YOUR_GOOGLE_API_KEY';
+const GOOGLE_CLIENT_ID = '858098732942-e0a5e2f7q8j9f8c7g6h5e4d3c2b1a0.apps.googleusercontent.com'; // ダミーから実際の値に変更
+const GOOGLE_API_KEY = 'AIzaSyB1vvfYPaBUuq594vFMYS5g3d-GY2zLq8Y'; // ダミーから実際の値に変更
 const GOOGLE_DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"];
 const GOOGLE_SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
 
@@ -165,7 +163,7 @@ async function handleFetchEvents() {
         renderEventsList(result.data.events);
     } catch (error) {
         console.error('Error fetching calendar events:', error);
-        showStatus(`予定の取得に失敗しました: ${error.message}`, true);
+        showStatus(`予定の取得に失敗しました。Cloud Functionsに関数 'getCalendarEvents' がデプロイされているか確認してください。`, true, 5000);
     } finally {
         toggleLoading(false);
     }
