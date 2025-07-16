@@ -27,11 +27,25 @@
                     <div><input id="email-address" name="email" type="email" autocomplete="email" required class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="メールアドレス"></div>
                     <div><input id="password" name="password" type="password" autocomplete="current-password" required class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="パスワード"></div>
                 </div>
+
+                <div class="flex items-center justify-end">
+                    <div class="text-sm">
+                        <a href="#" id="forgot-password-link" class="font-medium text-indigo-600 hover:text-indigo-500">
+                            パスワードをお忘れですか？
+                        </a>
+                    </div>
+                </div>
+
                 <div><button type="submit" class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">ログイン</button></div>
             </form>
+
+            <div class="text-sm text-center -mt-4">
+                <a href="/signup.html" class="font-medium text-indigo-600 hover:text-indigo-500">アカウントをお持ちでないですか？ 新規登録</a>
+            </div>
+
             <div class="relative"><div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-300"></div></div><div class="relative flex justify-center text-sm"><span class="px-2 bg-gray-50 text-gray-500">または</span></div></div>
-            <div><button id="google-login-button" class="w-full inline-flex justify-center py-3 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"><img class="h-5 w-5 mr-2" src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google icon">Googleでログイン</button></div>
-            <div class="text-sm text-center"><a href="/signup.html" class="font-medium text-indigo-600 hover:text-indigo-500">アカウントをお持ちでないですか？ 新規登録</a></div>
+            
+            <div><button id="google-login-button" class="w-full inline-flex justify-center py-3 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"><img class="h-5 w-5 mr-2" src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google icon">Googleでログイン / 新規登録</button></div>
         </div>
     </div>
 

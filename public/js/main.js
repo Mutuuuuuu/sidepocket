@@ -25,8 +25,6 @@ const initializePage = async () => {
     loadPageScript(user);
 
     // 5. ローディング画面を非表示にし、アプリ本体を表示
-    // ▼▼▼ 修正箇所 ▼▼▼
-    // 各要素が存在するかどうかをチェックしてからクラスを操作する
     if (appContainer) {
         appContainer.classList.remove('opacity-0');
     }
@@ -62,23 +60,39 @@ const initializeTopBar = async (user) => {
         }
     });
 
-    // サイドバーの開閉イベント
-    const menuToggle = document.getElementById('menu-toggle');
+    // ▼▼▼ サイドバーのイベントリスナーを修正 ▼▼▼
+    const sidebar = document.getElementById('sidebar');
     const sidebarOverlay = document.getElementById('sidebar-overlay');
-    if (menuToggle && appContainer && sidebarOverlay) {
-        const toggleSidebar = () => {
-            const isMobile = window.innerWidth < 768;
-            // モバイルの場合は別のクラスを付与して制御
-            if (isMobile) {
-                document.getElementById('sidebar').classList.toggle('-translate-x-full');
-                sidebarOverlay.classList.toggle('hidden');
-            } else {
-                appContainer.classList.toggle('sidebar-open');
-            }
-        };
-        menuToggle.addEventListener('click', toggleSidebar);
-        sidebarOverlay.addEventListener('click', toggleSidebar);
-    }
+    const menuToggle = document.getElementById('menu-toggle'); // デスクトップ用
+    const mobileMenuButton = document.getElementById('mobile-menu-button'); // モバイル用
+
+    // モバイル用のサイドバーを開く関数
+    const openMobileSidebar = () => {
+        if (!sidebar || !sidebarOverlay || !appContainer) return;
+        sidebar.classList.remove('-translate-x-full'); // スライドイン
+        sidebarOverlay.classList.remove('hidden'); // オーバーレイ表示
+        appContainer.classList.add('sidebar-open'); // テキスト表示のために展開
+    };
+
+    // モバイル用のサイドバーを閉じる関数
+    const closeMobileSidebar = () => {
+        if (!sidebar || !sidebarOverlay || !appContainer) return;
+        appContainer.classList.remove('sidebar-open'); // 展開状態を解除
+        sidebar.classList.add('-translate-x-full'); // スライドアウト
+        sidebarOverlay.classList.add('hidden'); // オーバーレイ非表示
+    };
+
+    // デスクトップ用のサイドバーを開閉する関数
+    const toggleDesktopSidebar = () => {
+        if (!appContainer) return;
+        appContainer.classList.toggle('sidebar-open');
+    };
+
+    // イベントリスナーを設定
+    mobileMenuButton?.addEventListener('click', openMobileSidebar);
+    sidebarOverlay?.addEventListener('click', closeMobileSidebar);
+    menuToggle?.addEventListener('click', toggleDesktopSidebar);
+    // ▲▲▲ ここまで修正 ▲▲▲
 };
 
 /**
