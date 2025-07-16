@@ -1,5 +1,9 @@
 import { getFirebaseServices } from './firebaseService.js';
-import { doc, getDoc, setDoc, serverTimestamp, collection, addDoc, query, where, orderBy, limit, onSnapshot, writeBatch, getDocs, deleteDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { 
+    doc, getDoc, setDoc, serverTimestamp, collection, addDoc, 
+    query, where, orderBy, limit, onSnapshot, writeBatch, 
+    getDocs, deleteDoc, Timestamp 
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const db = () => getFirebaseServices().db;
 
@@ -79,4 +83,44 @@ export const getTimestampsForPeriod = async (uid, start, end) => {
         const durationHours = (data.clockOutTime.toDate() - data.clockInTime.toDate()) / 36e5;
         return { id: d.id, ...data, durationHours };
     });
+};
+
+/**
+ * 新しいタイムスタンプ（稼働実績）を追加する
+ * @param {string} uid ユーザーID
+ * @param {object} data 保存するデータ（clockInTimeとclockOutTimeはJavaScriptのDateオブジェクト）
+ */
+export const addTimestamp = (uid, data) => {
+    // FirestoreのTimestampオブジェクトに変換して保存
+    const firestoreData = {
+        ...data,
+        clockInTime: Timestamp.fromDate(data.clockInTime),
+        clockOutTime: Timestamp.fromDate(data.clockOutTime),
+    };
+    return addDoc(collection(db(), 'users', uid, 'timestamps'), firestoreData);
+};
+
+/**
+ * 既存のタイムスタンプを更新する
+ * @param {string} uid ユーザーID
+ * @param {string} timestampId 更新するドキュメントのID
+ * @param {object} data 更新データ（clockInTimeとclockOutTimeはJavaScriptのDateオブジェクト）
+ */
+export const updateTimestamp = (uid, timestampId, data) => {
+    // FirestoreのTimestampオブジェクトに変換して更新
+    const firestoreData = {
+        ...data,
+        clockInTime: Timestamp.fromDate(data.clockInTime),
+        clockOutTime: Timestamp.fromDate(data.clockOutTime),
+    };
+    return setDoc(doc(db(), 'users', uid, 'timestamps', timestampId), firestoreData, { merge: true });
+};
+
+/**
+ * タイムスタンプを削除する
+ * @param {string} uid ユーザーID
+ * @param {string} timestampId 削除するドキュメントのID
+ */
+export const deleteTimestamp = (uid, timestampId) => {
+    return deleteDoc(doc(db(), 'users', uid, 'timestamps', timestampId));
 };

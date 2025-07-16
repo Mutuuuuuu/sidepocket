@@ -1,12 +1,14 @@
 rules_version = '2';
 
-// Craft rules based on data in your Firestore database
-// allow write: if firestore.get(
-//    /databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin;
 service firebase.storage {
   match /b/{bucket}/o {
-    match /{allPaths=**} {
-      allow read, write: if false;
+    // プロフィール画像へのアクセスルール
+    match /profile-icons/{userId}/{allPaths=**} {
+      // 誰でも読み取りは可能にする
+      allow read;
+      
+      // 書き込みは、認証済みで、かつ自分のユーザーIDのパスにのみ許可する
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }

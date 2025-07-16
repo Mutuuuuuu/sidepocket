@@ -1,5 +1,6 @@
 import { getFirebaseServices } from './services/firebaseService.js';
-import { updateProfile as updateAuthProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+// getAuth をインポートに追加
+import { getAuth, updateProfile as updateAuthProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 import { getUserProfile, updateUserProfile } from './services/firestoreService.js';
 import { toggleLoading, showStatus } from './services/uiService.js';
@@ -7,8 +8,8 @@ import { toggleLoading, showStatus } from './services/uiService.js';
 // DOM要素
 let profileForm, iconPreview, iconInput, displayNameInput, lastNameInput, firstNameInput;
 
-let currentUser, currentAuthUser;
-let selectedFile = null; // 選択された画像ファイルを保持
+let currentAuthUser; // この変数はページの初期化時にのみ使用します
+let selectedFile = null;
 
 /**
  * プロフィールページの初期化
@@ -24,7 +25,7 @@ export const initProfilePage = async (user) => {
     displayNameInput = document.getElementById('display-name-input');
     lastNameInput = document.getElementById('last-name-input');
     firstNameInput = document.getElementById('first-name-input');
-    
+
     // イベントリスナーを設定
     profileForm.addEventListener('submit', handleProfileUpdate);
     iconInput.addEventListener('change', handleFileSelect);
@@ -43,7 +44,7 @@ const populateProfileForm = async () => {
         showStatus('プロファイル情報の取得に失敗しました。', true);
         return;
     }
-    
+
     // Authの情報とFirestoreの情報を組み合わせる
     displayNameInput.value = userProfile.displayName || currentAuthUser.displayName || '';
     lastNameInput.value = userProfile.lastName || '';
@@ -74,15 +75,28 @@ const handleFileSelect = (e) => {
  */
 const handleProfileUpdate = async (e) => {
     e.preventDefault();
+
+    // 処理の直前に最新の認証状態を取得
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    // もしユーザーがいない（ログアウトしている）場合は処理を中断
+    if (!user) {
+        toggleLoading(false);
+        showStatus('認証セッションが切れました。再度ログインしてください。', true);
+        return;
+    }
+
     toggleLoading(true);
 
     try {
         const { storage } = getFirebaseServices();
-        let photoURL = currentAuthUser.photoURL;
+        let photoURL = user.photoURL; // 常に最新のuserオブジェクトから取得
 
         // 1. 画像が新しく選択されていたら、Storageにアップロード
         if (selectedFile) {
-            const filePath = `profile-icons/${currentAuthUser.uid}/${Date.now()}_${selectedFile.name}`;
+            // パスにも最新の user.uid を使用
+            const filePath = `profile-icons/${user.uid}/${Date.now()}_${selectedFile.name}`;
             const storageRef = ref(storage, filePath);
             const snapshot = await uploadBytes(storageRef, selectedFile);
             photoURL = await getDownloadURL(snapshot.ref);
@@ -93,13 +107,13 @@ const handleProfileUpdate = async (e) => {
         const newFirstName = firstNameInput.value;
 
         // 2. Firebase Authenticationのプロフィールを更新
-        await updateAuthProfile(currentAuthUser, {
+        await updateAuthProfile(user, {
             displayName: newDisplayName,
             photoURL: photoURL
         });
 
         // 3. Firestoreのユーザー情報を更新
-        await updateUserProfile(currentAuthUser.uid, {
+        await updateUserProfile(user.uid, {
             displayName: newDisplayName,
             lastName: newLastName,
             firstName: newFirstName,
@@ -112,7 +126,11 @@ const handleProfileUpdate = async (e) => {
 
     } catch (error) {
         console.error("Profile update error:", error);
-        showStatus(`エラーが発生しました: ${error.message}`, true);
+        if (error.code === 'storage/unauthorized') {
+            showStatus('ファイルのアップロード権限がありません。再ログインしてみてください。', true);
+        } else {
+            showStatus(`エラーが発生しました: ${error.message}`, true);
+        }
         toggleLoading(false);
     } finally {
         selectedFile = null; // 処理後にリセット

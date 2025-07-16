@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             await handleEmailSignup(email, password, displayName);
             showStatus('登録に成功しました！リダイレクトします...', false);
             setTimeout(() => {
-                window.location.href = 'home.html';
+                window.location.href = '/';
             }, 1500);
         } catch (error) {
             console.error(error);
