@@ -42,6 +42,7 @@ export const attachAuthListener = () => {
     });
 };
 
+// ▼▼▼ この関数を loadHeader に戻します ▼▼▼
 export const loadHeader = async () => {
     const placeholder = document.getElementById('header-placeholder');
     if (!placeholder) return;

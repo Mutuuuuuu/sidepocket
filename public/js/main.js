@@ -11,6 +11,7 @@ const initializePage = async () => {
     const user = await attachAuthListener();
     if (user) {
         await loadHeader();
+        // DOMの描画が完了してからUI初期化を実行
         setTimeout(async () => {
             await initializeTopBar(user);
         }, 0);
@@ -20,7 +21,7 @@ const initializePage = async () => {
     if (loadingOverlay) loadingOverlay.classList.add('hidden');
 };
 
-/** ヘッダーとサイドバー、通知機能のUIを初期化 */
+/** UIを初期化 */
 const initializeTopBar = async (user) => {
     const userProfile = await getUserProfile(user.uid);
     const displayName = userProfile?.displayName || user.displayName || 'Guest';
@@ -38,19 +39,54 @@ const initializeTopBar = async (user) => {
         }
     });
 
+    // --- ▼▼▼【重要】メニュー開閉ロジック ▼▼▼ ---
     const sidebar = document.getElementById('sidebar');
     const sidebarOverlay = document.getElementById('sidebar-overlay');
-    const menuToggle = document.getElementById('menu-toggle');
     const mobileMenuButton = document.getElementById('mobile-menu-button');
 
-    const openMobileSidebar = () => appContainer?.classList.add('sidebar-mobile-open');
-    const closeMobileSidebar = () => appContainer?.classList.remove('sidebar-mobile-open');
-    const toggleDesktopSidebar = () => appContainer?.classList.toggle('sidebar-open');
+    // デスクトップ用：マウスホバーで開閉
+    sidebar?.addEventListener('mouseenter', () => {
+        if (window.innerWidth >= 768) { // mdブレークポイント以上
+            appContainer?.classList.add('sidebar-open');
+        }
+    });
+    sidebar?.addEventListener('mouseleave', () => {
+        if (window.innerWidth >= 768) {
+            appContainer?.classList.remove('sidebar-open');
+        }
+    });
 
-    mobileMenuButton?.addEventListener('click', openMobileSidebar);
-    sidebarOverlay?.addEventListener('click', closeMobileSidebar);
-    menuToggle?.addEventListener('click', toggleDesktopSidebar);
+    // モバイル用：クリックで開閉
+    mobileMenuButton?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // JavaScriptで直接スタイルを操作して表示
+        if (sidebar) {
+            sidebar.style.transform = 'translateX(0)';
+        }
+        if (sidebarOverlay) {
+            sidebarOverlay.classList.remove('hidden');
+        }
+        // メニューの幅を広げてテキストを表示
+        appContainer?.classList.add('sidebar-open');
+    });
 
+    const closeMobileMenu = () => {
+        // JavaScriptで直接スタイルを操作して非表示
+        if (sidebar) {
+            sidebar.style.transform = 'translateX(-100%)';
+        }
+        if (sidebarOverlay) {
+            sidebarOverlay.classList.add('hidden');
+        }
+        // メニューの幅を元に戻す
+        appContainer?.classList.remove('sidebar-open');
+    };
+
+    sidebarOverlay?.addEventListener('click', closeMobileMenu);
+    // --- ▲▲▲ ここまで ▲▲▲ ---
+
+
+    // --- 通知機能（変更なし） ---
     const notificationButton = document.getElementById('notification-button');
     const notificationPanel = document.getElementById('notification-panel');
     const notificationList = document.getElementById('notification-list');

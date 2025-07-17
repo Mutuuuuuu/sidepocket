@@ -10,13 +10,11 @@
     #app-container.sidebar-open #logo-symbol { @apply hidden; }
     #app-container.sidebar-open #logo-full { @apply block; }
 
-    /* ▼▼▼【ここから修正】▼▼▼ */
     /* モバイルでサイドバーが開いているとき */
     #app-container.sidebar-mobile-open #sidebar {
-        @apply translate-x-0; /* `-`を削除 */
+        @apply translate-x-0;
     }
     #app-container.sidebar-mobile-open #sidebar-overlay {
         @apply block;
     }
-    /* ▲▲▲【ここまで修正】▲▲▲ */
 }
