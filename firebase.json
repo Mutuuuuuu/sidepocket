@@ -1,4 +1,11 @@
 {
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "functions": {
+    "source": "functions"
+  },
   "hosting": {
     "public": "public",
     "ignore": [
@@ -8,41 +15,12 @@
     ],
     "rewrites": [
       {
-        "source": "/index.html",
-        "destination": "/index.html"
-      },
-      {
-        "source": "/signup.html",
-        "destination": "/signup.html"
-      },
-      {
-        "source": "/login.html",
-        "destination": "/login.html"
-      },
-      {
         "source": "**",
         "destination": "/index.html"
       }
     ]
   },
-  "firestore": {
-    "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
-  },
   "storage": {
     "rules": "storage.rules"
-  },
-  "functions": [
-    {
-      "source": "functions",
-      "codebase": "default",
-      "ignore": [
-        "node_modules",
-        ".git",
-        "firebase-debug.log",
-        "firebase-debug.*.log",
-        "*.local"
-      ]
-    }
-  ]
+  }
 }

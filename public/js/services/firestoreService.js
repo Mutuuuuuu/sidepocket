@@ -2,7 +2,7 @@ import { getFirebaseServices } from './firebaseService.js';
 import { 
     doc, getDoc, setDoc, serverTimestamp, collection, addDoc, 
     query, where, orderBy, limit, onSnapshot, writeBatch, 
-    getDocs, deleteDoc, Timestamp 
+    getDocs, deleteDoc, Timestamp, updateDoc
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const db = () => getFirebaseServices().db;
@@ -104,17 +104,31 @@ export const deleteTimestamp = (uid, timestampId) => {
     return deleteDoc(doc(db(), 'users', uid, 'timestamps', timestampId));
 };
 
-// ▼▼▼【ここからお知らせ機能の関数を追加】▼▼▼
+// === Notifications ===
 
 /**
  * 新しいお知らせをFirestoreに追加
- * @param {object} notificationData - { title, category }
+ * @param {object} notificationData - { title, category, content }
  */
 export const addNotification = (notificationData) => {
     const notificationsCol = collection(db(), 'notifications');
     return addDoc(notificationsCol, {
         ...notificationData,
-        createdAt: serverTimestamp() // サーバーのタイムスタンプを使用
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+    });
+};
+
+/**
+ * お知らせをIDで更新
+ * @param {string} id 更新するお知らせのドキュメントID
+ * @param {object} data 更新するデータ { title, category, content }
+ */
+export const updateNotification = (id, data) => {
+    const notificationDoc = doc(db(), 'notifications', id);
+    return updateDoc(notificationDoc, {
+        ...data,
+        updatedAt: serverTimestamp()
     });
 };
 
@@ -123,17 +137,19 @@ export const addNotification = (notificationData) => {
  * @param {function} callback - お知らせの配列を引数に取るコールバック関数
  */
 export const getNotifications = (callback) => {
-    const notificationsCol = collection(db(), 'notifications');
-    const q = query(notificationsCol, orderBy('createdAt', 'desc'));
-
-    // onSnapshotでリアルタイムの変更を監視
+    const q = query(collection(db(), 'notifications'), orderBy('createdAt', 'desc'));
     return onSnapshot(q, (querySnapshot) => {
-        const notifications = [];
-        querySnapshot.forEach((doc) => {
-            notifications.push({ id: doc.id, ...doc.data() });
-        });
+        const notifications = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         callback(notifications);
     }, (error) => {
         console.error("お知らせの取得に失敗しました:", error);
     });
+};
+
+/**
+ * お知らせをIDで削除
+ * @param {string} notificationId 削除するお知らせのドキュメントID
+ */
+export const deleteNotification = (notificationId) => {
+    return deleteDoc(doc(db(), 'notifications', notificationId));
 };
