@@ -84,14 +84,7 @@ export const getTimestampsForPeriod = async (uid, start, end) => {
         return { id: d.id, ...data, durationHours };
     });
 };
-
-/**
- * 新しいタイムスタンプ（稼働実績）を追加する
- * @param {string} uid ユーザーID
- * @param {object} data 保存するデータ（clockInTimeとclockOutTimeはJavaScriptのDateオブジェクト）
- */
 export const addTimestamp = (uid, data) => {
-    // FirestoreのTimestampオブジェクトに変換して保存
     const firestoreData = {
         ...data,
         clockInTime: Timestamp.fromDate(data.clockInTime),
@@ -99,15 +92,7 @@ export const addTimestamp = (uid, data) => {
     };
     return addDoc(collection(db(), 'users', uid, 'timestamps'), firestoreData);
 };
-
-/**
- * 既存のタイムスタンプを更新する
- * @param {string} uid ユーザーID
- * @param {string} timestampId 更新するドキュメントのID
- * @param {object} data 更新データ（clockInTimeとclockOutTimeはJavaScriptのDateオブジェクト）
- */
 export const updateTimestamp = (uid, timestampId, data) => {
-    // FirestoreのTimestampオブジェクトに変換して更新
     const firestoreData = {
         ...data,
         clockInTime: Timestamp.fromDate(data.clockInTime),
@@ -115,12 +100,40 @@ export const updateTimestamp = (uid, timestampId, data) => {
     };
     return setDoc(doc(db(), 'users', uid, 'timestamps', timestampId), firestoreData, { merge: true });
 };
-
-/**
- * タイムスタンプを削除する
- * @param {string} uid ユーザーID
- * @param {string} timestampId 削除するドキュメントのID
- */
 export const deleteTimestamp = (uid, timestampId) => {
     return deleteDoc(doc(db(), 'users', uid, 'timestamps', timestampId));
+};
+
+// ▼▼▼【ここからお知らせ機能の関数を追加】▼▼▼
+
+/**
+ * 新しいお知らせをFirestoreに追加
+ * @param {object} notificationData - { title, category }
+ */
+export const addNotification = (notificationData) => {
+    const notificationsCol = collection(db(), 'notifications');
+    return addDoc(notificationsCol, {
+        ...notificationData,
+        createdAt: serverTimestamp() // サーバーのタイムスタンプを使用
+    });
+};
+
+/**
+ * お知らせ一覧をリアルタイムで取得
+ * @param {function} callback - お知らせの配列を引数に取るコールバック関数
+ */
+export const getNotifications = (callback) => {
+    const notificationsCol = collection(db(), 'notifications');
+    const q = query(notificationsCol, orderBy('createdAt', 'desc'));
+
+    // onSnapshotでリアルタイムの変更を監視
+    return onSnapshot(q, (querySnapshot) => {
+        const notifications = [];
+        querySnapshot.forEach((doc) => {
+            notifications.push({ id: doc.id, ...doc.data() });
+        });
+        callback(notifications);
+    }, (error) => {
+        console.error("お知らせの取得に失敗しました:", error);
+    });
 };

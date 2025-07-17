@@ -2,11 +2,20 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{userId} {
+
+    // ユーザーは自身のデータ（サブコレクション含む）のみ読み書き可能
+    match /users/{userId}/{documents=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
-      match /{subcollection}/{docId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
     }
+
+    // ▼▼▼【ここから追加】お知らせ用のルール ▼▼▼
+    match /notifications/{notificationId} {
+      // ログインしていれば誰でも読み取り可能
+      allow read: if request.auth != null;
+      
+      // isAdminクレームを持つ管理者のみ作成、更新、削除が可能
+      allow write: if request.auth.token.isAdmin == true;
+    }
+    // ▲▲▲【ここまで追加】▲▲▲
   }
 }

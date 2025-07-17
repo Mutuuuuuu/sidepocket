@@ -2,8 +2,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+// ▼▼【追加】▼▼
+import { getFunctions } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js";
 
-let firebaseApp, auth, db, storage;
+let firebaseApp, auth, db, storage, functions; // functions を追加
 
 export const initializeFirebase = async () => {
     if (firebaseApp) return;
@@ -14,6 +16,7 @@ export const initializeFirebase = async () => {
         auth = getAuth(firebaseApp);
         db = getFirestore(firebaseApp);
         storage = getStorage(firebaseApp);
+        functions = getFunctions(firebaseApp); // functionsを初期化
     } catch (error) {
         console.error("Firebase initialization failed:", error);
         document.body.innerHTML = '<h1>アプリケーションの初期化に失敗しました</h1>';
@@ -22,5 +25,13 @@ export const initializeFirebase = async () => {
 
 export const getFirebaseServices = () => {
     if (!firebaseApp) throw new Error("Firebase has not been initialized.");
-    return { auth, db, storage };
+    // ▼▼【変更】▼▼
+    return { auth, db, storage, functions };
+};
+/**
+ * IDを指定してお知らせを1件取得
+ * @param {string} id - お知らせのドキュメントID
+ */
+export const getNotificationById = (id) => {
+    return getDoc(doc(db(), 'notifications', id));
 };

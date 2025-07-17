@@ -67,3 +67,6 @@ node_modules/
 
 # dataconnect generated files
 .dataconnect
+
+# Google Cloud Credentials
+admin_script/side-pocket-sls-firebase-adminsdk-fbsvc-de8f39c10d.json
