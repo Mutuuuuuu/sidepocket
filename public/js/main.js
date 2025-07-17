@@ -119,7 +119,16 @@ const initializeTopBar = async (user) => {
             li.dataset.id = n.id;
             const categoryColor = categoryColors[n.category] || 'bg-gray-400 text-white';
             const date = n.createdAt.toDate().toLocaleDateString('ja-JP');
-            li.innerHTML = `<div class="flex items-start gap-3 pointer-events-none"><div class="flex-1"><p class="text-sm text-gray-800 font-semibold">${n.title}</p><div class="flex items-center gap-2 mt-1"><span class="text-xs font-bold px-2 py-0.5 rounded-full ${categoryColor}">${n.category}</span><p class="text-xs text-gray-500">${date}</p></div></div></div>`;
+            li.innerHTML = `
+                <div class="flex items-start gap-3">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm text-gray-800 font-semibold truncate" title="${n.title}">${n.title}</p>
+                        <div class="flex items-center gap-2 mt-1.5">
+                            <span class="text-xs font-bold px-2 py-0.5 rounded-full ${categoryColor}">${n.category}</span>
+                            <p class="text-xs text-gray-500">${date}</p>
+                        </div>
+                    </div>
+                </div>`;
             notificationList.appendChild(li);
         });
     };
