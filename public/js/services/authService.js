@@ -1,5 +1,14 @@
+// 既存 import はそのまま
 import { getFirebaseServices } from './firebaseService.js';
-import { onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import {
+    onAuthStateChanged,
+    signOut,
+    GoogleAuthProvider,
+    signInWithPopup,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    updateProfile
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { createUserProfile, getUserProfile } from './firestoreService.js';
 import { toggleLoading, showStatus } from './uiService.js';
 
@@ -11,7 +20,6 @@ export const attachAuthListener = () => {
             const isAuthPage = window.location.pathname.includes('login.html') || window.location.pathname.includes('signup.html');
             if (user) {
                 if (isAuthPage) return window.location.replace('/');
-                
                 const userProfile = await getUserProfile(user.uid);
                 if (!userProfile) {
                     await createUserProfile(user.uid, {
@@ -20,9 +28,9 @@ export const attachAuthListener = () => {
                         photoURL: user.photoURL || null,
                     });
                 } else if (user.displayName !== userProfile.displayName || user.photoURL !== userProfile.photoURL) {
-                    await updateProfile(user, { 
-                        displayName: userProfile.displayName, 
-                        photoURL: userProfile.photoURL 
+                    await updateProfile(user, {
+                        displayName: userProfile.displayName,
+                        photoURL: userProfile.photoURL
                     });
                 }
                 resolve(user);
@@ -35,24 +43,25 @@ export const attachAuthListener = () => {
 };
 
 export const loadHeader = async () => {
-    const headerPlaceholder = document.getElementById('header-placeholder');
-    if (!headerPlaceholder) return;
+    const placeholder = document.getElementById('header-placeholder');
+    if (!placeholder) return;
     try {
-        const response = await fetch('/header.html');
-        if (!response.ok) throw new Error('header.htmlの読み込みに失敗');
-        headerPlaceholder.innerHTML = await response.text();
-        
+        const res = await fetch('/header.html');
+        if (!res.ok) throw new Error('header.htmlの読み込みに失敗しました');
+        const html = await res.text();
+        placeholder.innerHTML = html;
+
+        // logout ボタンの処理
         document.getElementById('logout-button')?.addEventListener('click', () => {
             toggleLoading(true);
-            signOut(auth()).catch(error => {
-                showStatus(`ログアウトに失敗しました: ${error.message}`, true);
+            signOut(auth()).catch(err => {
+                showStatus(`ログアウトに失敗しました: ${err.message}`, true);
             }).finally(() => {
                 toggleLoading(false);
             });
         });
-
-    } catch (error) {
-        console.error("Header load error:", error);
+    } catch (err) {
+        console.error("Header Load Error:", err);
     }
 };
 
@@ -60,9 +69,9 @@ export const handleEmailSignup = async (email, password, displayName) => {
     const userCredential = await createUserWithEmailAndPassword(auth(), email, password);
     await updateProfile(userCredential.user, { displayName });
     await createUserProfile(userCredential.user.uid, {
-      email: userCredential.user.email,
-      displayName: displayName,
-      photoURL: null,
+        email: userCredential.user.email,
+        displayName: displayName,
+        photoURL: null,
     });
     return userCredential.user;
 };

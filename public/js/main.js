@@ -11,7 +11,9 @@ const initializePage = async () => {
     const user = await attachAuthListener();
     if (user) {
         await loadHeader();
-        await initializeTopBar(user);
+        setTimeout(async () => {
+            await initializeTopBar(user);
+        }, 0);
     }
     loadPageScript(user);
     if (appContainer) appContainer.classList.remove('opacity-0');
@@ -40,9 +42,11 @@ const initializeTopBar = async (user) => {
     const sidebarOverlay = document.getElementById('sidebar-overlay');
     const menuToggle = document.getElementById('menu-toggle');
     const mobileMenuButton = document.getElementById('mobile-menu-button');
-    const openMobileSidebar = () => { if (sidebar && sidebarOverlay && appContainer) { sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); appContainer.classList.add('sidebar-open'); } };
-    const closeMobileSidebar = () => { if (sidebar && sidebarOverlay && appContainer) { appContainer.classList.remove('sidebar-open'); sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); } };
-    const toggleDesktopSidebar = () => { if (appContainer) appContainer.classList.toggle('sidebar-open'); };
+
+    const openMobileSidebar = () => appContainer?.classList.add('sidebar-mobile-open');
+    const closeMobileSidebar = () => appContainer?.classList.remove('sidebar-mobile-open');
+    const toggleDesktopSidebar = () => appContainer?.classList.toggle('sidebar-open');
+
     mobileMenuButton?.addEventListener('click', openMobileSidebar);
     sidebarOverlay?.addEventListener('click', closeMobileSidebar);
     menuToggle?.addEventListener('click', toggleDesktopSidebar);
@@ -64,7 +68,7 @@ const initializeTopBar = async (user) => {
         'リリース': 'bg-sky-500 text-white',
         'サポート': 'bg-emerald-500 text-white'
     };
-    
+
     const renderNotifications = (notifications) => {
         allNotifications = notifications;
         if (!notificationList) return;
@@ -116,7 +120,9 @@ const initializeTopBar = async (user) => {
 
     const closeModal = () => detailModal.classList.add('hidden');
     closeModalButton?.addEventListener('click', closeModal);
-    detailModal?.addEventListener('click', (e) => { if (e.target === detailModal) closeModal(); });
+    detailModal?.addEventListener('click', (e) => {
+        if (e.target === detailModal) closeModal();
+    });
 };
 
 /** ページ固有のスクリプトを読み込む */

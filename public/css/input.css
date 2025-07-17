@@ -3,14 +3,20 @@
 @tailwind utilities;
 
 @layer components {
-    /* サイドバーが開いているときのスタイル定義 */
+    /* デスクトップでサイドバーが開いているときのスタイル */
     #app-container.sidebar-open #sidebar { @apply w-64; }
     #app-container.sidebar-open #content-container { @apply md:ml-64; }
     #app-container.sidebar-open .sidebar-text { @apply opacity-100; }
     #app-container.sidebar-open #logo-symbol { @apply hidden; }
     #app-container.sidebar-open #logo-full { @apply block; }
 
+    /* ▼▼▼【ここから修正】▼▼▼ */
     /* モバイルでサイドバーが開いているとき */
-    #app-container.sidebar-mobile-open #sidebar { @apply -translate-x-0; }
-    #app-container.sidebar-mobile-open #sidebar-overlay { @apply block; }
+    #app-container.sidebar-mobile-open #sidebar {
+        @apply translate-x-0; /* `-`を削除 */
+    }
+    #app-container.sidebar-mobile-open #sidebar-overlay {
+        @apply block;
+    }
+    /* ▲▲▲【ここまで修正】▲▲▲ */
 }
