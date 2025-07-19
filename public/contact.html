@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>お問い合わせ - sidepocket</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="images/sidepocket_symbol.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Noto Sans JP', sans-serif; 
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- ヘッダーセクション -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <!-- ロゴ -->
+                <div class="flex-shrink-0">
+                    <a href="/" title="sidepocketホーム">
+                        <img src="https://raw.githubusercontent.com/mutuuuuuu/sidepocket/main/public/images/sidepocket_Logo.png" alt="sidepocket Logo" class="h-8 w-auto">
+                    </a>
+                </div>
+                <!-- ナビゲーションボタン -->
+                <div class="flex items-center space-x-4">
+                    <a href="/login.html" class="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">ログイン</a>
+                    <a href="/signup.html" class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-5 rounded-md shadow-sm transition-colors">
+                        無料で始める
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="py-12 sm:py-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-2xl mx-auto">
+                <div class="text-center">
+                    <h1 class="text-3xl font-extrabold text-gray-900">お問い合わせ</h1>
+                    <p class="mt-4 text-lg text-gray-600">サービスに関するご質問やご要望など、お気軽にお問い合わせください。</p>
+                </div>
+
+                <form id="contact-form" class="mt-12 bg-white p-8 rounded-xl shadow-lg space-y-6">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700">お名前<span class="text-red-500">*</span></label>
+                        <input type="text" name="name" id="name" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700">メールアドレス<span class="text-red-500">*</span></label>
+                        <input type="email" name="email" id="email" required autocomplete="email" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="message" class="block text-sm font-medium text-gray-700">お問い合わせ内容<span class="text-red-500">*</span></label>
+                        <textarea id="message" name="message" rows="4" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+                    </div>
+                    <div>
+                        <button type="submit" id="submit-button" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            送信する
+                        </button>
+                    </div>
+                </form>
+                <div id="form-result" class="mt-6 text-center"></div>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        const form = document.getElementById('contact-form');
+        const resultDiv = document.getElementById('form-result');
+        const submitButton = document.getElementById('submit-button');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            resultDiv.innerHTML = '';
+            submitButton.disabled = true;
+            submitButton.textContent = '送信中...';
+
+            const formData = {
+                name: form.name.value,
+                email: form.email.value,
+                message: form.message.value,
+            };
+
+            try {
+                // ▼▼▼【重要】デプロイしたCloud FunctionのURLに必ず書き換えてください！▼▼▼
+                // Firebaseコンソール > Functions > sendContactForm のトリガーURLをコピーして貼り付けます。
+                const functionUrl = 'https://sendcontactform-nkwomoev3a-uc.a.run.app'; 
+                // ▲▲▲【重要】ここまで ▲▲▲
+                
+                const response = await fetch(functionUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData),
+                });
+
+                if (response.ok) {
+                    resultDiv.innerHTML = '<p class="text-green-600 font-semibold">お問い合わせありがとうございます。メッセージが送信されました。</p>';
+                    form.reset();
+                } else {
+                    throw new Error('メッセージの送信に失敗しました。');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerHTML = `<p class="text-red-600 font-semibold">エラーが発生しました。時間をおいて再度お試しください。</p>`;
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = '送信する';
+            }
+        });
+    </script>
+
+    <!-- フッター -->
+    <footer class="bg-white">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="text-center text-sm text-gray-500">
+                <div class="flex justify-center items-center mb-4">
+                     <img src="https://raw.githubusercontent.com/mutuuuuuu/sidepocket/main/public/images/sidepocket_symbol.png" alt="sidepocket Symbol" class="h-6 w-auto">
+                </div>
+                <div class="space-x-6">
+                    <a href="/terms.html" class="hover:underline">利用規約</a>
+                    <a href="/privacy.html" class="hover:underline">プライバシーポリシー</a>
+                    <a href="/contact.html" class="hover:underline">お問い合わせ</a>
+                </div>
+                <p class="mt-4">&copy; 2025 sidepocket. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

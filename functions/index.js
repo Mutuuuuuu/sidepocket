@@ -2,27 +2,111 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onRequest } = require("firebase-functions/v2/https");
 const { logger } = require("firebase-functions/v2");
+const cors = require("cors")({ origin: true });
 
 // Firebase Admin SDKモジュールをインポート
 const { initializeApp } = require("firebase-admin/app");
 const { getAuth } = require("firebase-admin/auth");
-const { getFirestore } = require("firebase-admin/firestore");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 
 // Admin SDKを初期化
 initializeApp();
 
-// Stripe SDKを初期化 (シークレットキーは環境変数に設定することを強く推奨します)
-// 例: firebase functions:config:set stripe.secret_key="sk_test_..."
-// const functions = require("firebase-functions");
-// const stripe = require("stripe")(functions.config().stripe.secret_key);
-// 下記はデモ用の仮キーです。本番環境では必ず環境変数を使用してください。
+// Stripe SDKを初期化
 const stripe = require("stripe")("sk_test_YOUR_STRIPE_SECRET_KEY");
-
 
 // googleapisは初回利用時に遅延読み込みして初期化のタイムアウトを防ぐ
 let googleapis;
 
-// --- 【新規追加】Stripe Checkoutセッションを作成する ---
+
+// --- お問い合わせフォーム機能 ---
+exports.sendContactForm = onRequest(async (req, res) => {
+    cors(req, res, async () => {
+      if (req.method !== "POST") {
+        return res.status(405).send("Method Not Allowed");
+      }
+      try {
+        const { name, email, message } = req.body;
+        if (!name || !email || !message) {
+          return res.status(400).send("Missing required fields.");
+        }
+        const db = getFirestore();
+        const contactRef = db.collection("contacts").doc();
+        await contactRef.set({
+          name,
+          email,
+          message,
+          createdAt: FieldValue.serverTimestamp(),
+          status: '未着手', // 初期ステータスを設定
+          isRead: false,
+        });
+        return res.status(200).send({ message: "Contact form data received and stored." });
+      } catch (error) {
+        logger.error("Error storing contact form data:", error);
+        return res.status(500).send("Internal Server Error");
+      }
+    });
+});
+
+// --- お問い合わせ一覧取得機能 (管理者用) ---
+exports.getContacts = onCall({ cors: true }, async (request) => {
+    if (!request.auth || !request.auth.token.isAdmin) {
+        throw new HttpsError("permission-denied", "管理者権限が必要です。");
+    }
+    try {
+        const db = getFirestore();
+        const snapshot = await db.collection("contacts").orderBy("createdAt", "desc").get();
+        const contacts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        return contacts;
+    } catch (error) {
+        logger.error("お問い合わせ一覧の取得エラー:", error);
+        throw new HttpsError("internal", "お問い合わせ一覧の取得に失敗しました。");
+    }
+});
+
+// --- お問い合わせステータス更新機能 (管理者用) ---
+exports.updateContactStatus = onCall({ cors: true }, async (request) => {
+    if (!request.auth || !request.auth.token.isAdmin) {
+        throw new HttpsError("permission-denied", "管理者権限が必要です。");
+    }
+    const { contactId, newStatus } = request.data;
+    if (!contactId || !newStatus) {
+        throw new HttpsError("invalid-argument", "IDと新しいステータスを指定してください。");
+    }
+
+    try {
+        const db = getFirestore();
+        const contactRef = db.collection("contacts").doc(contactId);
+        const doc = await contactRef.get();
+        if (!doc.exists) {
+            throw new HttpsError("not-found", "該当のお問い合わせが見つかりません。");
+        }
+
+        const updateData = { status: newStatus };
+        const currentData = doc.data();
+
+        // 最初のステータス変更時に対応開始日を記録
+        if (currentData.status === '未着手' && (newStatus === '対応中' || newStatus === '完了')) {
+            if (!currentData.startedAt) {
+                updateData.startedAt = FieldValue.serverTimestamp();
+            }
+        }
+        // 完了になったら完了日を記録
+        if (newStatus === '完了') {
+            updateData.completedAt = FieldValue.serverTimestamp();
+        }
+
+        await contactRef.update(updateData);
+        return { success: true, message: "ステータスを更新しました。" };
+
+    } catch (error) {
+        logger.error("お問い合わせステータスの更新エラー:", error);
+        throw new HttpsError("internal", "ステータスの更新に失敗しました。");
+    }
+});
+
+
+// --- Stripe Checkoutセッションを作成する ---
 exports.createCheckoutSession = onCall({ cors: true }, async (request) => {
     if (!request.auth) {
         throw new HttpsError("unauthenticated", "この操作には認証が必要です。");
@@ -35,13 +119,13 @@ exports.createCheckoutSession = onCall({ cors: true }, async (request) => {
             payment_method_types: ["card"],
             mode: "subscription",
             line_items: [{
-                price: priceId, // (例: 月額プランや年額プランのPrice ID)
+                price: priceId,
                 quantity: 1,
             }],
             success_url: successUrl || `${request.headers.origin}/profile.html?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: cancelUrl || `${request.headers.origin}/profile.html`,
-            customer_email: request.auth.token.email, // Stripe顧客にメールアドレスを事前入力
-            client_reference_id: uid, // Webhookでユーザーを特定するためにUIDを渡す
+            customer_email: request.auth.token.email,
+            client_reference_id: uid,
         });
 
         return { sessionId: session.id };
@@ -51,11 +135,9 @@ exports.createCheckoutSession = onCall({ cors: true }, async (request) => {
     }
 });
 
-// --- 【新規追加】Stripe Webhookを処理する ---
+// --- Stripe Webhookを処理する ---
 exports.stripeWebhook = onRequest({ cors: true }, async (req, res) => {
     const sig = req.headers["stripe-signature"];
-    // Webhookのシークレットキー (環境変数に設定してください)
-    // firebase functions:config:set stripe.webhook_secret="whsec_..."
     const endpointSecret = "whsec_YOUR_STRIPE_WEBHOOK_SECRET";
 
     let event;
@@ -69,21 +151,18 @@ exports.stripeWebhook = onRequest({ cors: true }, async (req, res) => {
     
     const db = getFirestore();
 
-    // イベントタイプに応じて処理を分岐
     switch (event.type) {
         case "checkout.session.completed": {
             const session = event.data.object;
             const uid = session.client_reference_id;
             const subscriptionId = session.subscription;
 
-            // ユーザーのプランをStandardに更新
             await db.collection("users").doc(uid).set({
                 plan: "Standard",
                 subscription: {
                     id: subscriptionId,
                     status: "active",
                     provider: "stripe",
-                    // Stripeから返される他のサブスクリプション情報もここに保存可能
                 }
             }, { merge: true });
             
@@ -96,7 +175,6 @@ exports.stripeWebhook = onRequest({ cors: true }, async (req, res) => {
             
             if (!userQuery.empty) {
                 const userDoc = userQuery.docs[0];
-                // ユーザーのプランをFreeにダウングレード
                 await userDoc.ref.update({
                     plan: "Free",
                     "subscription.status": "canceled"
@@ -105,14 +183,12 @@ exports.stripeWebhook = onRequest({ cors: true }, async (req, res) => {
             }
             break;
         }
-        // 他のイベントタイプ (例: customer.subscription.updated) の処理も追加可能
     }
-
     res.json({ received: true });
 });
 
 
-// --- Google Calendar連携 (既存) ---
+// --- Google Calendar連携 ---
 exports.getCalendarEvents = onCall({ cors: true }, async (request) => {
   if (!googleapis) {
     googleapis = require("googleapis");
@@ -148,7 +224,7 @@ exports.getCalendarEvents = onCall({ cors: true }, async (request) => {
   }
 });
 
-// --- 全ユーザーの取得 (【更新】plan情報を追加) ---
+// --- 全ユーザーの取得 ---
 exports.getAllUsers = onCall({ cors: true }, async (request) => {
   if (!request.auth || !request.auth.token.isAdmin) {
     throw new HttpsError("permission-denied", "この操作を実行するには管理者権限が必要です。");
@@ -164,7 +240,7 @@ exports.getAllUsers = onCall({ cors: true }, async (request) => {
           email: userRecord.email,
           displayName: userRecord.displayName || profile.displayName || "N/A",
           isAdmin: !!userRecord.customClaims?.isAdmin,
-          plan: profile.plan || 'Free', // plan情報を追加
+          plan: profile.plan || 'Free',
           createdAt: userRecord.metadata.creationTime,
         };
       })
@@ -176,7 +252,7 @@ exports.getAllUsers = onCall({ cors: true }, async (request) => {
   }
 });
 
-// --- ユーザー詳細の取得 (既存) ---
+// --- ユーザー詳細の取得 ---
 exports.getUserDetails = onCall({ cors: true }, async (request) => {
     if (!request.auth || !request.auth.token.isAdmin) {
         throw new HttpsError("permission-denied", "この操作を実行するには管理者権限が必要です。");
@@ -208,7 +284,7 @@ exports.getUserDetails = onCall({ cors: true }, async (request) => {
 });
 
 
-// --- 管理者権限の設定 (既存) ---
+// --- 管理者権限の設定 ---
 exports.setUserAdminRole = onCall({ cors: true }, async (request) => {
   if (!request.auth || !request.auth.token.isAdmin) {
     throw new HttpsError("permission-denied", "この操作を実行するには管理者権限が必要です。");
@@ -226,7 +302,7 @@ exports.setUserAdminRole = onCall({ cors: true }, async (request) => {
   }
 });
 
-// --- 【新規追加】会員プランの設定 ---
+// --- 会員プランの設定 ---
 exports.setUserPlan = onCall({ cors: true }, async (request) => {
     if (!request.auth || !request.auth.token.isAdmin) {
       throw new HttpsError("permission-denied", "この操作を実行するには管理者権限が必要です。");
@@ -245,7 +321,7 @@ exports.setUserPlan = onCall({ cors: true }, async (request) => {
 });
 
 
-// --- ダッシュボード分析データ取得 (既存) ---
+// --- ダッシュボード分析データ取得 ---
 exports.getDashboardAnalytics = onCall({ cors: true }, async (request) => {
     if (!request.auth || !request.auth.token.isAdmin) {
         throw new HttpsError("permission-denied", "管理者権限が必要です。");
@@ -266,46 +342,51 @@ exports.getDashboardAnalytics = onCall({ cors: true }, async (request) => {
         let monthlyActiveUsers = new Set();
 
         for (const user of allUsers) {
-            // プロジェクト数を集計
             const projectsSnapshot = await db.collection("users").doc(user.uid).collection("projects").get();
             totalProjects += projectsSnapshot.size;
-
-            // プロジェクト作成月を集計
             projectsSnapshot.forEach(doc => {
                 const project = doc.data();
                 if (project.createdAt) {
-                    const month = project.createdAt.toDate().toISOString().slice(0, 7); // YYYY-MM
+                    const month = project.createdAt.toDate().toISOString().slice(0, 7);
                     projectsByMonth[month] = (projectsByMonth[month] || 0) + 1;
                 }
             });
 
-            // 稼働時間とアクティブユーザーを集計
             const timestampsSnapshot = await db.collection("users").doc(user.uid).collection("timestamps").get();
             let userIsActiveInLast30Days = false;
             timestampsSnapshot.forEach(doc => {
                 const ts = doc.data();
-                // 総稼働時間の計算
                 if (ts.status === 'completed' && ts.clockInTime && ts.clockOutTime) {
                     totalDurationHours += (ts.clockOutTime.toMillis() - ts.clockInTime.toMillis()) / 3600000;
                 }
-                // アクティブユーザーの判定
                 if (ts.clockInTime) {
                     const clockInDate = ts.clockInTime.toDate();
                     const month = clockInDate.toISOString().slice(0, 7);
-                    if (!activeUsersByMonth[month]) {
-                        activeUsersByMonth[month] = new Set();
-                    }
+                    if (!activeUsersByMonth[month]) activeUsersByMonth[month] = new Set();
                     activeUsersByMonth[month].add(user.uid);
-
-                    if (clockInDate > lastMonth) {
-                        userIsActiveInLast30Days = true;
-                    }
+                    if (clockInDate > lastMonth) userIsActiveInLast30Days = true;
                 }
             });
             if(userIsActiveInLast30Days) monthlyActiveUsers.add(user.uid);
         }
 
-        // グラフ用にデータを整形
+        // リードタイム計算
+        const contactsSnapshot = await db.collection("contacts").where("status", "==", "完了").get();
+        let totalL1ResponseLeadTime = 0;
+        let totalCloseLeadTime = 0;
+        let completedContactsCount = 0;
+        contactsSnapshot.forEach(doc => {
+            const contact = doc.data();
+            if (contact.createdAt && contact.startedAt && contact.completedAt) {
+                totalL1ResponseLeadTime += contact.startedAt.toMillis() - contact.createdAt.toMillis();
+                totalCloseLeadTime += contact.completedAt.toMillis() - contact.createdAt.toMillis();
+                completedContactsCount++;
+            }
+        });
+        const avgL1ResponseLeadTime = completedContactsCount > 0 ? totalL1ResponseLeadTime / completedContactsCount : null;
+        const avgCloseLeadTime = completedContactsCount > 0 ? totalCloseLeadTime / completedContactsCount : null;
+
+        // グラフ用データ整形
         const userRegistrationByMonth = {};
         allUsers.forEach(user => {
             if (user.createdAt) {
@@ -314,7 +395,6 @@ exports.getDashboardAnalytics = onCall({ cors: true }, async (request) => {
             }
         });
 
-        // 月のラベルを生成 (過去12ヶ月分)
         const labels = [];
         for (let i = 11; i >= 0; i--) {
             const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -323,26 +403,22 @@ exports.getDashboardAnalytics = onCall({ cors: true }, async (request) => {
         
         let cumulativeUsers = 0;
         const cumulativeUserCounts = {};
-        // 全期間の累計ユーザー数を計算
         Object.keys(userRegistrationByMonth).sort().forEach(month => {
             cumulativeUsers += userRegistrationByMonth[month];
             cumulativeUserCounts[month] = cumulativeUsers;
         });
         
-        // 直近月の累計ユーザー数を過去の月に引き継ぐ
         for(let i=1; i < labels.length; i++) {
             if (!cumulativeUserCounts[labels[i]]) {
                 cumulativeUserCounts[labels[i]] = cumulativeUserCounts[labels[i-1]] || 0;
             }
         }
 
-        const userChartData = labels.map(month => {
-            return {
-                month,
-                total: cumulativeUserCounts[month] || 0,
-                active: activeUsersByMonth[month] ? activeUsersByMonth[month].size : 0,
-            };
-        });
+        const userChartData = labels.map(month => ({
+            month,
+            total: cumulativeUserCounts[month] || 0,
+            active: activeUsersByMonth[month] ? activeUsersByMonth[month].size : 0,
+        }));
 
         const projectChartData = labels.map(month => ({
             month,
@@ -356,6 +432,8 @@ exports.getDashboardAnalytics = onCall({ cors: true }, async (request) => {
             totalProjects,
             totalDurationHours: Math.round(totalDurationHours * 10) / 10,
             activeRate: Math.round(activeRate * 10) / 10,
+            avgL1ResponseLeadTime,
+            avgCloseLeadTime,
             userChartData,
             projectChartData,
         };

@@ -11,6 +11,8 @@ const setUserAdminRole = httpsCallable(functions, 'setUserAdminRole');
 const getUserDetails = httpsCallable(functions, 'getUserDetails');
 const getDashboardAnalytics = httpsCallable(functions, 'getDashboardAnalytics');
 const setUserPlan = httpsCallable(functions, 'setUserPlan');
+const getContacts = httpsCallable(functions, 'getContacts');
+const updateContactStatus = httpsCallable(functions, 'updateContactStatus');
 
 let allUsers = [];
 let userChart = null;
@@ -32,6 +34,19 @@ const toDisplayableDate = (timestamp, format = 'toLocaleString') => {
     return format === 'toLocaleString' ? date.toLocaleString('ja-JP') : date.toLocaleTimeString('ja-JP');
 };
 
+const formatLeadTime = (milliseconds) => {
+    if (milliseconds === null || isNaN(milliseconds) || milliseconds < 0) return '---';
+    const seconds = milliseconds / 1000;
+    const minutes = seconds / 60;
+    const hours = minutes / 60;
+    const days = hours / 24;
+
+    if (days >= 1) return `${days.toFixed(1)}日`;
+    if (hours >= 1) return `${hours.toFixed(1)}時間`;
+    if (minutes >= 1) return `${minutes.toFixed(1)}分`;
+    return `${seconds.toFixed(0)}秒`;
+};
+
 export const initAdminPage = async (user) => {
     if (!user) {
         window.location.href = '/';
@@ -48,6 +63,7 @@ export const initAdminPage = async (user) => {
         }
         setupTabs();
         await setupDashboard();
+        await setupContacts();
         setupNotifications();
         await setupUsers();
         setupUserDetailModal();
@@ -82,6 +98,8 @@ const setupDashboard = async () => {
         document.getElementById('stats-total-projects').textContent = data.totalProjects;
         document.getElementById('stats-total-hours').textContent = `${data.totalDurationHours} 時間`;
         document.getElementById('stats-active-rate').textContent = `${data.activeRate}%`;
+        document.getElementById('stats-avg-l1-lead-time').textContent = data.avgL1ResponseLeadTime ? formatLeadTime(data.avgL1ResponseLeadTime) : 'データなし';
+        document.getElementById('stats-avg-close-lead-time').textContent = data.avgCloseLeadTime ? formatLeadTime(data.avgCloseLeadTime) : 'データなし';
         
         if(userChart) userChart.destroy();
         if(projectChart) projectChart.destroy();
@@ -461,5 +479,79 @@ const openUserDetailModal = async (uid) => {
         content.innerHTML = `<p class="text-red-500">ユーザー詳細の取得に失敗しました: ${error.message}</p>`;
     } finally {
         toggleLoading(false);
+    }
+};
+
+const setupContacts = async () => {
+    const listBody = document.getElementById('contacts-list-body');
+    if (!listBody) return;
+
+    const renderContacts = (contacts) => {
+        listBody.innerHTML = '';
+        if (contacts.length === 0) {
+            listBody.innerHTML = '<tr><td colspan="7" class="text-center p-8 text-gray-500">お問い合わせはありません。</td></tr>';
+            return;
+        }
+
+        const statusColors = {
+            '未着手': 'bg-red-100 text-red-800',
+            '対応中': 'bg-yellow-100 text-yellow-800',
+            '完了': 'bg-green-100 text-green-800',
+        };
+
+        contacts.forEach(c => {
+            const tr = document.createElement('tr');
+            tr.className = 'bg-white border-b hover:bg-gray-50';
+            const createdAt = toDisplayableDate(c.createdAt);
+            
+            const l1LeadTime = (c.startedAt && c.createdAt) ? formatLeadTime(c.startedAt.toMillis() - c.createdAt.toMillis()) : '---';
+            const closeLeadTime = (c.completedAt && c.createdAt) ? formatLeadTime(c.completedAt.toMillis() - c.createdAt.toMillis()) : '---';
+
+            tr.innerHTML = `
+                <td class="px-4 py-4 whitespace-nowrap">${createdAt}</td>
+                <td class="px-4 py-4">
+                    <select class="contact-status-selector bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2" data-id="${c.id}">
+                        <option value="未着手" ${c.status === '未着手' ? 'selected' : ''}>未着手</option>
+                        <option value="対応中" ${c.status === '対応中' ? 'selected' : ''}>対応中</option>
+                        <option value="完了" ${c.status === '完了' ? 'selected' : ''}>完了</option>
+                    </select>
+                </td>
+                <td class="px-4 py-4 font-medium text-gray-900">${c.name}</td>
+                <td class="px-4 py-4">${c.email}</td>
+                <td class="px-4 py-4 text-sm text-gray-600 max-w-xs truncate" title="${c.message}">${c.message}</td>
+                <td class="px-4 py-4 whitespace-nowrap">${l1LeadTime}</td>
+                <td class="px-4 py-4 whitespace-nowrap">${closeLeadTime}</td>
+            `;
+            listBody.appendChild(tr);
+        });
+    };
+
+    listBody.addEventListener('change', async (e) => {
+        if (e.target.classList.contains('contact-status-selector')) {
+            const selector = e.target;
+            const id = selector.dataset.id;
+            const newStatus = selector.value;
+            
+            toggleLoading(true);
+            try {
+                await updateContactStatus({ contactId: id, newStatus });
+                showStatus('ステータスを更新しました。');
+                // 再描画してリードタイムなどを更新
+                const result = await getContacts();
+                renderContacts(result.data);
+            } catch (error) {
+                showStatus(`エラーが発生しました: ${error.message}`, true);
+            } finally {
+                toggleLoading(false);
+            }
+        }
+    });
+
+    try {
+        const result = await getContacts();
+        renderContacts(result.data);
+    } catch (error) {
+        showStatus("お問い合わせの読み込みに失敗しました。", true);
+        listBody.innerHTML = `<tr><td colspan="7" class="text-center p-8 text-red-500">エラー: ${error.message}</td></tr>`;
     }
 };

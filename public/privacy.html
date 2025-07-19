@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>プライバシーポリシー - sidepocket</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="images/sidepocket_symbol.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Noto Sans JP', sans-serif; 
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .prose h1 { @apply text-3xl font-bold mb-6; }
+        .prose h2 { @apply text-2xl font-bold mt-8 mb-4 border-b pb-2; }
+        .prose p { @apply mb-4 leading-relaxed; }
+        .prose ul { @apply list-disc list-inside space-y-2; }
+        .prose ol { @apply list-decimal list-inside space-y-2; }
+    </style>
+</head>
+<body class="bg-white text-gray-800">
+
+    <!-- ヘッダーセクション -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <!-- ロゴ -->
+                <div class="flex-shrink-0">
+                    <a href="/" title="sidepocketホーム">
+                        <img src="https://raw.githubusercontent.com/mutuuuuuu/sidepocket/main/public/images/sidepocket_Logo.png" alt="sidepocket Logo" class="h-8 w-auto">
+                    </a>
+                </div>
+                <!-- ナビゲーションボタン -->
+                <div class="flex items-center space-x-4">
+                    <a href="/login.html" class="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">ログイン</a>
+                    <a href="/signup.html" class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-5 rounded-md shadow-sm transition-colors">
+                        無料で始める
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="py-12 sm:py-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <article class="prose max-w-4xl mx-auto">
+                <h1>sidepocket プライバシーポリシー</h1>
+                <p>sidepocket運営事務局（以下、「当方」といいます。）は、本ウェブサイト上で提供するサービス「sidepocket」（以下、「本サービス」といいます。）における、ユーザーの個人情報の取扱いについて、以下のとおりプライバシーポリシー（以下、「本ポリシー」といいます。）を定めます。</p>
+
+                <h2>第1条（個人情報）</h2>
+                <p>「個人情報」とは、個人情報保護法にいう「個人情報」を指すものとし、生存する個人に関する情報であって、当該情報に含まれる氏名、生年月日、住所、電話番号、連絡先その他の記述等により特定の個人を識別できる情報及び容貌、指紋、声紋にかかるデータ、及び健康保険証の保険者番号などの当該情報単体から特定の個人を識別できる情報（個人識別情報）を指します。</p>
+
+                <h2>第2条（個人情報の収集方法）</h2>
+                <p>当方は、ユーザーが利用登録をする際にメールアドレスなどの個人情報をお尋ねすることがあります。本サービスは、認証にFirebase Authenticationを利用しており、ユーザーがGoogleアカウントを用いて登録する場合、Googleアカウントのプロフィール情報（氏名、メールアドレス、プロフィール写真など）を取得します。</p>
+                <p>また、ユーザーが本サービスを利用するにあたり、以下の情報を収集します。</p>
+                <ul>
+                    <li>プロジェクト情報（プロジェクト名、契約形態、単価など）</li>
+                    <li>稼働時間の記録（開始時刻、終了時刻など）</li>
+                    <li>Googleカレンダー連携機能を利用する場合、ユーザーのGoogleカレンダー上の予定情報</li>
+                </ul>
+
+                <h2>第3条（個人情報を収集・利用する目的）</h2>
+                <p>当方が個人情報を収集・利用する目的は、以下のとおりです。</p>
+                <ol>
+                    <li>本サービスの提供・運営のため</li>
+                    <li>ユーザーからのお問い合わせに回答するため（本人確認を行うことを含む）</li>
+                    <li>メンテナンス、重要なお知らせなど必要に応じたご連絡のため</li>
+                    <li>利用規約に違反したユーザーや、不正・不当な目的でサービスを利用しようとするユーザーの特定をし、ご利用をお断りするため</li>
+                    <li>ユーザーにご自身の登録情報の閲覧や変更、削除、ご利用状況の閲覧を行っていただくため</li>
+                    <li>上記の利用目的に付随する目的</li>
+                </ol>
+
+                <h2>第4条（Googleカレンダー連携について）</h2>
+                <p>本サービスは、ユーザーの利便性向上のため、Google Calendar APIを利用した機能を提供します。</p>
+                <ol>
+                    <li><strong>取得する情報</strong>：ユーザーが認証したGoogleアカウントのカレンダー情報（予定のタイトル、開始時刻、終了時刻）。</li>
+                    <li><strong>利用目的</strong>：取得したカレンダー情報を本サービスの稼働実績として取り込むためにのみ利用します。</li>
+                    <li><strong>情報の取扱い</strong>：取得した情報は、本サービスの機能提供の目的以外で利用したり、第三者に提供したりすることはありません。Google社のプライバシーポリシーについては、<a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">こちら</a>をご確認ください。</li>
+                </ol>
+
+                <h2>第5条（個人情報の第三者提供）</h2>
+                <p>当方は、次に掲げる場合を除いて、あらかじめユーザーの同意を得ることなく、第三者に個人情報を提供することはありません。ただし、個人情報保護法その他の法令で認められる場合を除きます。</p>
+                <ol>
+                    <li>人の生命、身体または財産の保護のために必要がある場合であって、本人の同意を得ることが困難であるとき</li>
+                    <li>公衆衛生の向上または児童の健全な育成の推進のために特に必要がある場合であって、本人の同意を得ることが困難であるとき</li>
+                    <li>国の機関もしくは地方公共団体またはその委託を受けた者が法令の定める事務を遂行することに対して協力する必要がある場合であって、本人の同意を得ることにより当該事務の遂行に支障を及ぼすおそれがあるとき</li>
+                </ol>
+
+                <h2>第6条（個人情報の開示）</h2>
+                <p>当方は、本人から個人情報の開示を求められたときは、本人に対し、遅滞なくこれを開示します。ただし、開示することにより次のいずれかに該当する場合は、その全部または一部を開示しないこともあり、開示しない決定をした場合には、その旨を遅滞なく通知します。</p>
+                <ol>
+                    <li>本人または第三者の生命、身体、財産その他の権利利益を害するおそれがある場合</li>
+                    <li>当方の業務の適正な実施に著しい支障を及ぼすおそれがある場合</li>
+                    <li>その他法令に違反することとなる場合</li>
+                </ol>
+
+                <h2>第7条（個人情報の訂正および削除）</h2>
+                <ol>
+                    <li>ユーザーは、当方の保有する自己の個人情報が誤った情報である場合には、当方が定める手続きにより、当方に対して個人情報の訂正、追加または削除（以下、「訂正等」といいます。）を請求することができます。</li>
+                    <li>当方は、ユーザーから前項の請求を受けてその請求に応じる必要があると判断した場合には、遅滞なく、当該個人情報の訂正等を行うものとします。</li>
+                </ol>
+
+                <h2>第8条（プライバシーポリシーの変更）</h2>
+                <p>本ポリシーの内容は、法令その他本ポリシーに別段の定めのある事項を除いて、ユーザーに通知することなく、変更することができるものとします。当方が別途定める場合を除いて、変更後のプライバシーポリシーは、本ウェブサイトに掲載したときから効力を生じるものとします。</p>
+
+                <h2>第9条（お問い合わせ窓口）</h2>
+                <p>本ポリシーに関するお問い合わせは、下記の窓口までお願いいたします。</p>
+                <p>sidepocket運営事務局<br>連絡先：[お問い合わせフォームへのリンクまたはメールアドレスを記載]</p>
+                
+                <p class="mt-8">以上</p>
+                <p>制定日：2025年7月19日</p>
+            </article>
+        </div>
+    </main>
+
+    <!-- フッター -->
+    <footer class="bg-gray-100">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="text-center text-sm text-gray-500">
+                <div class="flex justify-center items-center mb-4">
+                     <img src="https://raw.githubusercontent.com/mutuuuuuu/sidepocket/main/public/images/sidepocket_symbol.png" alt="sidepocket Symbol" class="h-6 w-auto">
+                </div>
+                <div class="space-x-6">
+                    <a href="/terms.html" class="hover:underline">利用規約</a>
+                    <a href="/privacy.html" class="hover:underline">プライバシーポリシー</a>
+                    <a href="/contact.html" class="hover:underline">お問い合わせ</a>
+                </div>
+                <p class="mt-4">&copy; 2025 sidepocket. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

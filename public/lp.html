@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sidepocket - あなたの「働き方」をスマートに記録する時間管理アプリ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="https://raw.githubusercontent.com/mutuuuuuu/sidepocket/main/public/images/sidepocket_symbol.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/heroicons/2.1.3/24/outline/styles.min.css" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Noto Sans JP', sans-serif; 
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .scroll-animation {
+            opacity: 0;
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        .scroll-animation.fade-in-up {
+            transform: translateY(40px);
+        }
+        .scroll-animation.fade-in-left {
+            transform: translateX(-40px);
+        }
+        .scroll-animation.fade-in-right {
+            transform: translateX(40px);
+        }
+        .is-visible {
+            opacity: 1;
+            transform: translate(0, 0);
+        }
+        .feature-icon {
+            width: 2.5rem; /* 40px */
+            height: 2.5rem; /* 40px */
+            padding: 0.5rem; /* 8px */
+            border-radius: 0.75rem; /* 12px */
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-800">
+
+    <!-- ヘッダーセクション -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex-shrink-0">
+                    <a href="/" title="sidepocketホーム">
+                        <img src="https://raw.githubusercontent.com/mutuuuuuu/sidepocket/main/public/images/sidepocket_Logo.png" alt="sidepocket Logo" class="h-8 w-auto">
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/login.html" class="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">ログイン</a>
+                    <a href="/signup.html" class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-5 rounded-md shadow-sm transition-colors">
+                        無料で始める
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- ヒーローセクション -->
+        <section class="bg-gray-50 overflow-hidden">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-20 text-center">
+                <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight leading-tight scroll-animation fade-in-up">
+                    あなたの「時間」を、価値に変える。
+                </h1>
+                <p class="mt-6 max-w-2xl mx-auto text-lg text-gray-600 scroll-animation fade-in-up" style="transition-delay: 0.2s;">
+                    sidepocketは、フリーランスや副業ワーカーのためのシンプルな時間管理アプリ。面倒な稼働時間管理からあなたを解放し、創造的な仕事に集中する時間を取り戻します。
+                </p>
+                <div class="mt-8 flex justify-center space-x-4 scroll-animation fade-in-up" style="transition-delay: 0.4s;">
+                    <a href="/signup.html" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+                        今すぐ無料で試す
+                    </a>
+                    <a href="#features" class="inline-block bg-white hover:bg-gray-100 text-gray-700 font-bold py-3 px-8 rounded-lg shadow-lg border border-gray-200 transition-transform transform hover:scale-105">
+                        機能を見る
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- メインビジュアル -->
+        <div class="bg-gray-50 pb-16">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="アプリのダッシュボード画面イメージ" class="rounded-xl shadow-2xl mx-auto scroll-animation fade-in-up" onerror="this.onerror=null;this.src='https://placehold.co/1200x600/e2e8f0/475569?text=Dashboard+Image';">
+            </div>
+        </div>
+
+        <!-- 課題提起セクション -->
+        <section class="py-16 sm:py-24 bg-white overflow-hidden">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight scroll-animation fade-in-up">こんな時間の悩みを抱えていませんか？</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600 scroll-animation fade-in-up" style="transition-delay: 0.2s;">フリーランスや副業でよくある、時間管理の課題。</p>
+                </div>
+                <div class="mt-12 grid gap-8 md:grid-cols-3">
+                    <div class="bg-gray-50 p-8 rounded-xl shadow-sm scroll-animation fade-in-up">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-full bg-blue-500 text-white mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008Zm0 3h.008v.008H8.25v-.008Zm0 3h.008v.008H8.25v-.008Zm3-6h.008v.008H11.25v-.008Zm0 3h.008v.008H11.25v-.008Zm0 3h.008v.008H11.25v-.008Zm3-6h.008v.008H14.25v-.008Zm0 3h.008v.008H14.25v-.008ZM6 18V9.75a3 3 0 0 1 3-3h4.5a3 3 0 0 1 3 3v8.25a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3Z" /></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900">稼働時間の集計が大変</h3>
+                        <p class="mt-2 text-base text-gray-600">プロジェクトごとに稼働時間を集計し、稼働報告書を作成したり会計ソフトに入力するのが月末の大きな負担になっている。</p>
+                    </div>
+                    <div class="bg-gray-50 p-8 rounded-xl shadow-sm scroll-animation fade-in-up" style="transition-delay: 0.2s;">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-full bg-blue-500 text-white mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.75h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5-1.5a1.5 1.5 0 0 1-1.5-1.5V6.75A1.5 1.5 0 0 1 3.75 5.25h16.5a1.5 1.5 0 0 1 1.5 1.5v10.5a1.5 1.5 0 0 1-1.5 1.5H3.75Z" /></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900">プロジェクトや案件の正確な管理が大変</h3>
+                        <p class="mt-2 text-base text-gray-600">複数のプロジェクトを抱えていると、稼働実績、収益、契約期間、単価など管理すべきことがたくさんあって管理しきれない。</p>
+                    </div>
+                    <div class="bg-gray-50 p-8 rounded-xl shadow-sm scroll-animation fade-in-up" style="transition-delay: 0.4s;">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-full bg-blue-500 text-white mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900">使いやすい時間管理システムがない</h3>
+                        <p class="mt-2 text-base text-gray-600">勤怠システムや打刻システムは法人向けが多くフリーランス・副業ワーカーが使いやすい時間管理ツールがなかなか見つからない。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 機能紹介セクション -->
+        <section id="features" class="py-16 sm:py-24 bg-gray-50 overflow-hidden">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight scroll-animation fade-in-up">side pocketが、すべて解決します</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600 scroll-animation fade-in-up" style="transition-delay: 0.2s;">あなたの時間管理をシンプルにする、直感的でパワフルな機能。</p>
+                </div>
+
+                <!-- Feature 1 -->
+                <div class="mt-16 grid md:grid-cols-2 gap-16 items-center">
+                    <div class="scroll-animation fade-in-left">
+                        <div class="flex items-center mb-4">
+                             <div class="feature-icon bg-green-500 flex items-center justify-center mr-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                            </div>
+                            <h3 class="text-2xl font-bold text-gray-900">ワンクリックで、正確な時間記録</h3>
+                        </div>
+                        <p class="mt-4 text-lg text-gray-600">「出勤」「退勤」ボタンを押すだけのシンプルな操作で、作業時間を正確に記録。もう手計算や記憶に頼る必要はありません。</p>
+                        <ul class="mt-6 space-y-2 text-gray-600">
+                            <li class="flex items-start"><span class="text-blue-500 mr-2 mt-1">✓</span><span>プロジェクトごとの自動集計</span></li>
+                            <li class="flex items-start"><span class="text-blue-500 mr-2 mt-1">✓</span><span>休憩時間もかんたんに記録</span></li>
+                            <li class="flex items-start"><span class="text-blue-500 mr-2 mt-1">✓</span><span>記録の修正もラクラク</span></li>
+                        </ul>
+                    </div>
+                    <div class="mt-10 md:mt-0 scroll-animation fade-in-right">
+                        <img src="https://images.unsplash.com/photo-1620325867582-51a2958dfd89?q=80&w=1972&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="ワンクリック打刻のイメージ" class="rounded-lg shadow-xl" onerror="this.onerror=null;this.src='https://placehold.co/500x400/e2e8f0/475569?text=Feature+1+Image';">
+                    </div>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="mt-24 grid md:grid-cols-2 gap-16 items-center">
+                    <div class="order-2 md:order-1 mt-10 md:mt-0 scroll-animation fade-in-left">
+                         <img src="https://images.unsplash.com/photo-1563986768609-322da13575f3?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="レポートと収支管理のイメージ" class="rounded-lg shadow-xl" onerror="this.onerror=null;this.src='https://placehold.co/500x400/e2e8f0/475569?text=Feature+2+Image';">
+                    </div>
+                    <div class="order-1 md:order-2 scroll-animation fade-in-right">
+                        <div class="flex items-center mb-4">
+                             <div class="feature-icon bg-purple-500 flex items-center justify-center mr-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" /></svg>
+                            </div>
+                            <h3 class="text-2xl font-bold text-gray-900">充実のレポート機能</h3>
+                        </div>
+                        <p class="mt-4 text-lg text-gray-600">プロジェクト(案件)ごとに稼働実績や収支のレポートをひと目で把握できます。また、エクスポート機能で、稼働実績報告書の作成や会計システムへの連携も可能です。</p>
+                         <ul class="mt-6 space-y-2 text-gray-600">
+                            <li class="flex items-start"><span class="text-blue-500 mr-2 mt-1">✓</span><span>時給・月給など柔軟な単価設定</span></li>
+                            <li class="flex items-start"><span class="text-blue-500 mr-2 mt-1">✓</span><span>グラフで直感的に収支を把握</span></li>
+                            <li class="flex items-start"><span class="text-blue-500 mr-2 mt-1">✓</span><span>CSV・PDFでのエクスポート機能</span></li>
+                        </ul>
+                    </div>
+                </div>
+
+                 <!-- Feature 3 -->
+                <div class="mt-24 grid md:grid-cols-2 gap-16 items-center">
+                    <div class="scroll-animation fade-in-left">
+                        <div class="flex items-center mb-4">
+                             <div class="feature-icon bg-yellow-500 flex items-center justify-center mr-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0h18M12 12.75h.008v.008H12v-.008Z" /></svg>
+                            </div>
+                            <h3 class="text-2xl font-bold text-gray-900">Googleカレンダー連携</h3>
+                        </div>
+                        <p class="mt-4 text-lg text-gray-600">普段お使いのGoogleカレンダーの予定を、ワンクリックで稼働実績として取り込み。予定と実績の二重管理から解放されます。</p>
+                        <ul class="mt-6 space-y-2 text-gray-600">
+                            <li class="flex items-start"><span class="text-blue-500 mr-2 mt-1">✓</span><span>実績の登録漏れを防止</span></li>
+                            <li class="flex items-start"><span class="text-blue-500 mr-2 mt-1">✓</span><span>カレンダーベースで一日を振り返り</span></li>
+                        </ul>
+                    </div>
+                    <div class="mt-10 md:mt-0 scroll-animation fade-in-right">
+                        <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Googleカレンダー連携のイメージ" class="rounded-lg shadow-xl" onerror="this.onerror=null;this.src='https://placehold.co/500x400/e2e8f0/475569?text=Feature+3+Image';">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 料金プランセクション -->
+        <section class="py-16 sm:py-24 bg-white overflow-hidden">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight scroll-animation fade-in-up">あなたに合った料金プラン</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600 scroll-animation fade-in-up" style="transition-delay: 0.2s;">
+                        現在はβ版での提供のため、Freeプランでもすべての機能がご利用いただけます。
+                    </p>
+                </div>
+                
+                <!-- プランカード -->
+                <div class="mt-12 grid gap-8 md:grid-cols-2 max-w-4xl mx-auto">
+                    <!-- Free Plan -->
+                    <div class="border border-gray-200 rounded-2xl shadow-lg p-8 flex flex-col scroll-animation fade-in-up">
+                        <h3 class="text-2xl font-bold text-gray-900">Free</h3>
+                        <p class="mt-2 text-gray-600">まずは無料で始めたい方に</p>
+                        <div class="mt-6 flex items-baseline">
+                            <span class="text-5xl font-extrabold tracking-tight">¥0</span>
+                            <span class="ml-1 text-xl font-medium text-gray-500">/月</span>
+                        </div>
+                        <a href="/signup.html" class="mt-8 block w-full bg-blue-600 hover:bg-blue-700 text-white text-center font-bold py-3 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+                            無料でアカウント作成
+                        </a>
+                    </div>
+                    <!-- Standard Plan -->
+                    <div class="border-2 border-blue-500 rounded-2xl shadow-lg p-8 flex flex-col bg-blue-50 relative scroll-animation fade-in-up" style="transition-delay: 0.2s;">
+                         <div class="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2">
+                            <span class="px-3 py-1 text-sm font-semibold tracking-wide text-white bg-blue-500 rounded-full">おすすめ</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-blue-900">Standard</h3>
+                        <p class="mt-2 text-blue-700">本格的に活用したいフリーランス・副業ワーカー向け</p>
+                        <div class="mt-6 flex items-baseline">
+                            <span class="text-5xl font-extrabold tracking-tight">開発中</span>
+                        </div>
+                        <button disabled class="mt-8 block w-full bg-gray-400 text-white text-center font-bold py-3 rounded-lg cursor-not-allowed">
+                            準備中
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 機能比較表 -->
+                <div class="mt-16 max-w-4xl mx-auto scroll-animation fade-in-up">
+                    <h3 class="text-xl font-bold text-center mb-8">機能比較</h3>
+                    <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+                        <table class="w-full text-sm table-fixed">
+                            <thead>
+                                <tr class="border-b border-gray-200">
+                                    <th class="py-4 px-4 text-left font-bold w-1/2 border-r border-gray-200">機能</th>
+                                    <th class="py-4 px-4 text-center font-bold bg-gray-100 w-1/4 border-r border-gray-200">Free</th>
+                                    <th class="py-4 px-4 text-center font-bold bg-blue-50 text-blue-900 w-1/4">Standard</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                <tr>
+                                    <td class="py-4 px-4 font-medium border-r border-gray-200">基本的な時間記録・プロジェクト管理</td>
+                                    <td class="py-4 px-4 text-center border-r border-gray-200"><span class="text-green-500 font-bold text-lg">✓</span></td>
+                                    <td class="py-4 px-4 text-center"><span class="text-green-500 font-bold text-lg">✓</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="py-4 px-4 font-medium border-r border-gray-200">広告表示</td>
+                                    <td class="py-4 px-4 text-center border-r border-gray-200">あり</td>
+                                    <td class="py-4 px-4 text-center">なし</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-4 px-4 font-medium border-r border-gray-200">レポート出力</td>
+                                    <td class="py-4 px-4 text-center border-r border-gray-200">
+                                        <span class="text-green-500 font-bold text-lg">✓</span>
+                                        <span class="block text-xs text-gray-500">(β版のみ)</span>
+                                    </td>
+                                    <td class="py-4 px-4 text-center"><span class="text-green-500 font-bold text-lg">✓</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="py-4 px-4 font-medium border-r border-gray-200">Googleカレンダー連携</td>
+                                    <td class="py-4 px-4 text-center border-r border-gray-200">
+                                        <span class="text-green-500 font-bold text-lg">✓</span>
+                                        <span class="block text-xs text-gray-500">(β版のみ)</span>
+                                    </td>
+                                    <td class="py-4 px-4 text-center"><span class="text-green-500 font-bold text-lg">✓</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="py-4 px-4 font-medium border-r border-gray-200">時間記録データ保管期間</td>
+                                    <td class="py-4 px-4 text-center border-r border-gray-200">6ヶ月</td>
+                                    <td class="py-4 px-4 text-center">制限なし</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="mt-4 text-xs text-gray-500 text-center">
+                        ※今後の機能拡張で別途差分が発生する場合があります。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTAセクション -->
+        <section class="bg-blue-600 overflow-hidden">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+                <div class="text-center text-white">
+                    <h2 class="text-3xl font-extrabold tracking-tight scroll-animation fade-in-up">さあ、sidepocketで働き方を変えよう。</h2>
+                    <p class="mt-4 text-lg text-blue-100 scroll-animation fade-in-up" style="transition-delay: 0.2s;">もう面倒な時間管理に悩まされるのは終わり。今すぐ登録して、新しい働き方を始めましょう。</p>
+                    <a href="/signup.html" class="mt-8 inline-block bg-white text-blue-600 font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105 scroll-animation fade-in-up" style="transition-delay: 0.4s;">
+                        アカウントを無料で作成
+                    </a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- フッター -->
+    <footer class="bg-gray-100">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="text-center text-sm text-gray-500">
+                <div class="flex justify-center items-center mb-4">
+                     <img src="https://raw.githubusercontent.com/mutuuuuuu/sidepocket/main/public/images/sidepocket_symbol.png" alt="sidepocket Symbol" class="h-6 w-auto">
+                </div>
+                <div class="space-x-6">
+                    <a href="/terms.html" class="hover:underline">利用規約</a>
+                    <a href="/privacy.html" class="hover:underline">プライバシーポリシー</a>
+                    <a href="/contact.html" class="hover:underline">お問い合わせ</a>
+                </div>
+                <p class="mt-4">&copy; 2025 sidepocket. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- アニメーション用のJavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const targets = document.querySelectorAll('.scroll-animation');
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    // isIntersectingプロパティで、要素が画面内に入ったか判定
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        // 一度表示したら監視を停止
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, {
+                rootMargin: '0px 0px -10% 0px' // 画面の下端から10%早く表示を開始
+            });
+
+            // 各要素の監視を開始
+            targets.forEach(target => {
+                observer.observe(target);
+            });
+        });
+    </script>
+
+</body>
+</html>
