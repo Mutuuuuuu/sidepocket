@@ -53,50 +53,72 @@
                             <div class="p-4 border-b"><h3 class="font-bold text-gray-800">お知らせ</h3></div>
                             <ul id="notification-list" class="divide-y max-h-96 overflow-y-auto"></ul>
                         </div>
-                            <ul id="notification-list" class="divide-y max-h-96 overflow-y-auto"></ul>
-                        </div>
                     </div>
                 </div>
             </header>
             <main class="p-6 md:p-8 flex-1 overflow-y-auto">
                 <h1 class="text-3xl font-bold text-gray-800 mb-6">プロフィール</h1>
                 <div id="status-message-container"></div>
-                <div class="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-md">
-                    <form id="profile-form">
-                        <div class="space-y-6">
+                
+                <div class="max-w-3xl mx-auto space-y-8">
+                    <!-- ▼▼▼ 【追加】プラン情報セクション ▼▼▼ -->
+                    <div class="bg-white p-8 rounded-xl shadow-md">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">会員プラン</h2>
+                        <div id="subscription-status" class="p-4 bg-gray-100 rounded-lg flex items-center justify-between">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">プロフィール画像</label>
-                                <div class="mt-2 flex items-center space-x-6">
-                                    <img id="user-icon-preview" class="h-24 w-24 rounded-full object-cover" src="images/sidepocket_symbol.png" alt="User icon preview">
-                                    <label for="icon-upload-input" class="cursor-pointer bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50">
-                                        <span>変更する</span>
-                                        <input id="icon-upload-input" name="icon-upload" type="file" class="sr-only" accept="image/png, image/jpeg">
-                                    </label>
-                                </div>
+                                <p class="text-sm text-gray-600">現在のプラン</p>
+                                <p id="current-plan" class="text-2xl font-bold text-gray-900">---</p>
                             </div>
-                            <div>
-                                <label for="display-name-input" class="block text-sm font-medium text-gray-700">表示名</label>
-                                <input type="text" id="display-name-input" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label for="last-name-input" class="block text-sm font-medium text-gray-700">姓</label>
-                                    <input type="text" id="last-name-input" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                                </div>
-                                <div>
-                                    <label for="first-name-input" class="block text-sm font-medium text-gray-700">名</label>
-                                    <input type="text" id="first-name-input" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="pt-8 text-right">
-                            <button type="submit" id="update-profile-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
-                                プロフィールを更新
+                            <button id="upgrade-button" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 hidden">
+                                アップグレード
                             </button>
                         </div>
-                    </form>
+                        <p id="plan-description" class="text-sm text-gray-500 mt-3"></p>
+                    </div>
+                    <!-- ▲▲▲ ここまで ▲▲▲ -->
+
+                    <div class="bg-white p-8 rounded-xl shadow-md">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">プロフィール情報</h2>
+                        <form id="profile-form">
+                            <div class="space-y-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">プロフィール画像</label>
+                                    <div class="mt-2 flex items-center space-x-6">
+                                        <img id="user-icon-preview" class="h-24 w-24 rounded-full object-cover" src="images/sidepocket_symbol.png" alt="User icon preview">
+                                        <label for="icon-upload-input" class="cursor-pointer bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50">
+                                            <span>変更する</span>
+                                            <input id="icon-upload-input" name="icon-upload" type="file" class="sr-only" accept="image/png, image/jpeg">
+                                        </label>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="display-name-input" class="block text-sm font-medium text-gray-700">表示名</label>
+                                    <input type="text" id="display-name-input" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label for="last-name-input" class="block text-sm font-medium text-gray-700">姓</label>
+                                        <input type="text" id="last-name-input" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                    </div>
+                                    <div>
+                                        <label for="first-name-input" class="block text-sm font-medium text-gray-700">名</label>
+                                        <input type="text" id="first-name-input" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="pt-8 text-right">
+                                <button type="submit" id="update-profile-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
+                                    プロフィールを更新
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </main>
+
+            <!-- ▼▼▼ 広告表示エリア ▼▼▼ -->
+            <div id="ad-container" class="hidden px-6 md:px-8"></div>
+            <!-- ▲▲▲ ここまで ▲▲▲ -->
         </div>
     </div>
     <script type="module" src="js/main.js"></script>

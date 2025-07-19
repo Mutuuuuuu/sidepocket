@@ -4,8 +4,9 @@ import { getProjects, addCalendarEventsAsTimestamps } from './services/firestore
 import { toggleLoading, showStatus } from './services/uiService.js';
 
 // --- Google API & OAuth 関連 ---
-const GOOGLE_CLIENT_ID = '858098732942-e0a5e2f7q8j9f8c7g6h5e4d3c2b1a0.apps.googleusercontent.com'; // ダミーから実際の値に変更
-const GOOGLE_API_KEY = 'AIzaSyB1vvfYPaBUuq594vFMYS5g3d-GY2zLq8Y'; // ダミーから実際の値に変更
+// ★★★ ご提供いただいたキーを反映しました ★★★
+const GOOGLE_CLIENT_ID = '887116583823-rjg8ibt6p37pnjqo2sosaer155id82v5.apps.googleusercontent.com'; 
+const GOOGLE_API_KEY = 'AIzaSyCQ9wFRgAFXzmzlUim01eO0XQPlMW5KMIk'; 
 const GOOGLE_DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"];
 const GOOGLE_SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
 
@@ -183,6 +184,7 @@ async function handleImportSubmit(e) {
         if (selectedOption && selectedOption.value) {
             eventsToImport.push({
                 id: checkbox.dataset.eventId,
+                summary: checkbox.dataset.eventSummary,
                 start: checkbox.dataset.eventStart,
                 end: checkbox.dataset.eventEnd,
                 project: JSON.parse(selectedOption.dataset.projectData)
@@ -223,7 +225,7 @@ function renderEventsList(events) {
     }
 
     const projectOptionsHtml = allProjects.map(p => 
-        `<option value="${p.id}" data-project-data='${JSON.stringify(p)}'>${p.name}</option>`
+        `<option value="${p.id}" data-project-data='${JSON.stringify({code: p.code, name: p.name})}'>${p.name}</option>`
     ).join('');
 
     events.forEach(event => {
@@ -234,11 +236,12 @@ function renderEventsList(events) {
                 <div class="flex-shrink-0 flex items-center">
                     <input type="checkbox" class="event-checkbox h-5 w-5 text-indigo-600 border-gray-300 rounded" 
                         data-event-id="${event.id}"
+                        data-event-summary="${event.summary || ''}"
                         data-event-start="${event.start}"
                         data-event-end="${event.end}">
                 </div>
                 <div class="flex-grow">
-                    <p class="font-bold text-gray-800">${event.summary}</p>
+                    <p class="font-bold text-gray-800">${event.summary || '(タイトルなし)'}</p>
                     <p class="text-sm text-gray-600">${startDate.toLocaleString('ja-JP')} - ${endDate.toLocaleString('ja-JP')}</p>
                 </div>
                 <div class="flex-shrink-0 w-full sm:w-48">

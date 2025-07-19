@@ -4,8 +4,10 @@ import {
     query, where, orderBy, limit, onSnapshot, writeBatch, 
     getDocs, deleteDoc, Timestamp, updateDoc
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
 const db = () => getFirebaseServices().db;
+const storage = () => getFirebaseServices().storage;
 
 // === User Profile ===
 export const createUserProfile = (uid, data) => {
@@ -17,6 +19,34 @@ export const getUserProfile = async (uid) => {
 };
 export const updateUserProfile = (uid, data) => {
     return setDoc(doc(db(), 'users', uid), data, { merge: true });
+};
+
+/**
+ * ユーザーのプロフィール画像をFirebase Storageにアップロードし、ダウンロードURLを返す
+ * @param {string} uid ユーザーID
+ * @param {File} file アップロードする画像ファイル
+ * @returns {Promise<string>} アップロードされた画像のダウンロードURL
+ */
+export const uploadUserIcon = async (uid, file) => {
+    const filePath = `profile-icons/${uid}/${Date.now()}_${file.name}`;
+    const storageRef = ref(storage(), filePath);
+    const snapshot = await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+    return downloadURL;
+};
+
+export const getUserDetails = async (uid) => {
+    const userProfile = await getUserProfile(uid);
+    
+    const projectsQuery = query(collection(db(), 'users', uid, 'projects'), orderBy('createdAt', 'desc'));
+    const projectsSnapshot = await getDocs(projectsQuery);
+    const projects = projectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    const timestampsQuery = query(collection(db(), 'users', uid, 'timestamps'), orderBy('clockInTime', 'desc'), limit(10));
+    const timestampsSnapshot = await getDocs(timestampsQuery);
+    const timestamps = timestampsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    return { profile: userProfile, projects, timestamps };
 };
 
 // === Projects ===
@@ -104,12 +134,28 @@ export const deleteTimestamp = (uid, timestampId) => {
     return deleteDoc(doc(db(), 'users', uid, 'timestamps', timestampId));
 };
 
-// === Notifications ===
+// ▼▼▼ 【ここから追加】カレンダーの予定をタイムスタンプとして登録する関数 ▼▼▼
+export const addCalendarEventsAsTimestamps = async (uid, events) => {
+    const batch = writeBatch(db());
+    const timestampsCol = collection(db(), 'users', uid, 'timestamps');
 
-/**
- * 新しいお知らせをFirestoreに追加
- * @param {object} notificationData - { title, category, content }
- */
+    events.forEach(event => {
+        const newDocRef = doc(timestampsCol);
+        batch.set(newDocRef, {
+            project: event.project,
+            clockInTime: Timestamp.fromDate(new Date(event.start)),
+            clockOutTime: Timestamp.fromDate(new Date(event.end)),
+            status: 'completed',
+            memo: `[Calendar Event] ${event.summary || ''}`.trim(),
+            calendarEventId: event.id
+        });
+    });
+
+    await batch.commit();
+};
+// ▲▲▲ ここまで ▲▲▲
+
+// === Notifications ===
 export const addNotification = (notificationData) => {
     const notificationsCol = collection(db(), 'notifications');
     return addDoc(notificationsCol, {
@@ -118,12 +164,6 @@ export const addNotification = (notificationData) => {
         updatedAt: serverTimestamp()
     });
 };
-
-/**
- * お知らせをIDで更新
- * @param {string} id 更新するお知らせのドキュメントID
- * @param {object} data 更新するデータ { title, category, content }
- */
 export const updateNotification = (id, data) => {
     const notificationDoc = doc(db(), 'notifications', id);
     return updateDoc(notificationDoc, {
@@ -131,25 +171,23 @@ export const updateNotification = (id, data) => {
         updatedAt: serverTimestamp()
     });
 };
-
-/**
- * お知らせ一覧をリアルタイムで取得
- * @param {function} callback - お知らせの配列を引数に取るコールバック関数
- */
 export const getNotifications = (callback) => {
-    const q = query(collection(db(), 'notifications'), orderBy('createdAt', 'desc'));
+    const today = new Date().toISOString().split('T')[0];
+    const q = query(collection(db(), 'notifications'), 
+        where('startDate', '<=', today),
+        orderBy('startDate', 'desc'),
+        orderBy('createdAt', 'desc')
+    );
+
     return onSnapshot(q, (querySnapshot) => {
-        const notifications = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const notifications = querySnapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter(n => !n.endDate || n.endDate >= today); // endDateが未設定か、今日以降
         callback(notifications);
     }, (error) => {
         console.error("お知らせの取得に失敗しました:", error);
     });
 };
-
-/**
- * お知らせをIDで削除
- * @param {string} notificationId 削除するお知らせのドキュメントID
- */
 export const deleteNotification = (notificationId) => {
     return deleteDoc(doc(db(), 'notifications', notificationId));
 };

@@ -46,6 +46,12 @@ const initializeUI = async (user) => {
     }
     // --- ▲▲▲ ここまで ▲▲▲ ---
 
+    // --- ▼▼▼ 【追加】会員プランに応じた広告表示 ▼▼▼ ---
+    // Freeプランの場合、広告を表示する
+    if (userProfile?.plan === 'Free') {
+        showAds();
+    }
+    // --- ▲▲▲ 【ここまで】 ▲▲▲ ---
 
     // 現在のページに応じてナビゲーションのスタイルを適用
     const currentPath = window.location.pathname;
@@ -62,6 +68,25 @@ const initializeUI = async (user) => {
     // お知らせパネルのセットアップ
     setupNotificationPanel();
 };
+
+/**
+ * 【追加】広告表示エリアに広告を挿入する
+ * この関数はFreeプランのユーザーにのみ呼び出されます。
+ * 各ページのHTMLに <div id="ad-container" class="hidden"></div> のような要素を配置してください。
+ */
+const showAds = () => {
+    const adContainer = document.getElementById('ad-container');
+    if (adContainer) {
+        adContainer.innerHTML = `
+            <div class="w-full my-4 p-4 bg-gray-100 border border-gray-300 rounded-lg text-center">
+                <p class="text-sm text-gray-600">【広告】Standardプランにアップグレードして、この広告を非表示にしましょう！</p>
+                <!-- ここに実際の広告配信タグを挿入します -->
+            </div>
+        `;
+        adContainer.classList.remove('hidden');
+    }
+};
+
 
 /**
  * サイドバーメニューの開閉ロジック
@@ -163,11 +188,12 @@ const setupNotificationPanel = () => {
         if (notification) {
             modalTitle.textContent = notification.title;
             modalDate.textContent = notification.createdAt.toDate().toLocaleDateString('ja-JP');
-            modalContent.textContent = notification.content || '詳細な内容はありません。';
+            // contentをHTMLとして解釈させることでリンクを有効化
+            modalContent.innerHTML = notification.content || '詳細な内容はありません。';
             detailModal.classList.remove('hidden');
         }
     });
-    
+
     const closeModal = () => detailModal?.classList.add('hidden');
     closeModalButton?.addEventListener('click', closeModal);
     detailModal?.addEventListener('click', (e) => {
@@ -175,8 +201,8 @@ const setupNotificationPanel = () => {
     });
 };
 
-
-/** * 現在のURLに応じてページ固有のスクリプトを読み込む
+/**
+ * 現在のURLに応じてページ固有のスクリプトを読み込む
  * @param {object} user ログインユーザーオブジェクト
  */
 const loadPageScript = (user) => {

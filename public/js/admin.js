@@ -5,48 +5,55 @@ import { httpsCallable } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 
 const functions = getFirebaseServices().functions;
 
+// Cloud Functions
 const getAllUsers = httpsCallable(functions, 'getAllUsers');
 const setUserAdminRole = httpsCallable(functions, 'setUserAdminRole');
-const getDashboardStats = httpsCallable(functions, 'getDashboardStats');
+const getUserDetails = httpsCallable(functions, 'getUserDetails');
+const getDashboardAnalytics = httpsCallable(functions, 'getDashboardAnalytics');
+const setUserPlan = httpsCallable(functions, 'setUserPlan');
 
 let allUsers = [];
+let userChart = null;
+let projectChart = null;
+
+const toDisplayableDate = (timestamp, format = 'toLocaleString') => {
+    if (!timestamp) return '日時不明';
+    let date;
+    if (timestamp._seconds !== undefined) {
+        date = new Date(timestamp._seconds * 1000 + (timestamp._nanoseconds || 0) / 1000000);
+    } else if (typeof timestamp === 'string') {
+        date = new Date(timestamp);
+    } else if (typeof timestamp.toDate === 'function') {
+        date = timestamp.toDate();
+    } else {
+        return '不正な日時形式';
+    }
+    if (isNaN(date.getTime())) return '不正な日時';
+    return format === 'toLocaleString' ? date.toLocaleString('ja-JP') : date.toLocaleTimeString('ja-JP');
+};
 
 export const initAdminPage = async (user) => {
     if (!user) {
         window.location.href = '/';
         return;
     }
-
-    console.log("管理者ページの初期化を開始。ユーザーUID:", user.uid);
     toggleLoading(true);
-
     try {
-        // IDトークンを強制的にサーバーから再取得します
         const idTokenResult = await user.getIdTokenResult(true);
-
-        // ★★★【重要】デバッグコード★★★
-        // 取得したトークンに含まれる全ての権限情報をコンソールに出力します。
-        // ここに `isAdmin: true` が含まれているかどうかが、問題解決の鍵となります。
-        console.log("取得した認証トークンの権限情報(claims):", idTokenResult.claims);
-        // ★★★ここまで★★★
-
         if (!idTokenResult.claims.isAdmin) {
             toggleLoading(false);
             alert('管理者権限が確認できませんでした。権限が付与されているアカウントで再度ログインしてください。');
             window.location.href = '/';
             return;
         }
-
-        // 権限チェックが成功した場合のみ、ページのセットアップを続行
         setupTabs();
         await setupDashboard();
         setupNotifications();
         await setupUsers();
-
+        setupUserDetailModal();
     } catch (error) {
         console.error("管理者ページの初期化に失敗しました:", error);
         alert("管理者ページの初期化に失敗しました。詳細はコンソールを確認してください。");
-        window.location.href = '/';
     } finally {
         toggleLoading(false);
     }
@@ -55,63 +62,128 @@ export const initAdminPage = async (user) => {
 const setupTabs = () => {
     const tabs = document.querySelectorAll('#admin-tabs .tab-button');
     const panes = document.querySelectorAll('#tab-content .tab-pane');
-
-    const switchTab = (tabName) => {
-        tabs.forEach(tab => {
-            const isSelected = tab.dataset.tab === tabName;
-            tab.classList.toggle('tab-active', isSelected);
-            tab.classList.toggle('text-gray-500', !isSelected);
-            tab.classList.toggle('border-transparent', !isSelected);
-        });
-        panes.forEach(pane => {
-            pane.classList.toggle('active', pane.id === `${tabName}-content`);
-        });
-    };
-    
-    switchTab('dashboard'); 
-
     tabs.forEach(tab => {
-        tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            panes.forEach(p => p.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById(`${tab.dataset.tab}-content`).classList.add('active');
+        });
     });
 };
 
 const setupDashboard = async () => {
+    toggleLoading(true);
     try {
-        const result = await getDashboardStats();
-        const stats = result.data;
-        document.getElementById('stats-total-users').textContent = stats.totalUsers;
-        document.getElementById('stats-total-projects').textContent = stats.totalProjects;
-        document.getElementById('stats-total-hours').textContent = `${stats.totalDurationHours} 時間`;
+        const result = await getDashboardAnalytics();
+        const data = result.data;
+
+        document.getElementById('stats-total-users').textContent = data.totalUsers;
+        document.getElementById('stats-total-projects').textContent = data.totalProjects;
+        document.getElementById('stats-total-hours').textContent = `${data.totalDurationHours} 時間`;
+        document.getElementById('stats-active-rate').textContent = `${data.activeRate}%`;
+        
+        if(userChart) userChart.destroy();
+        if(projectChart) projectChart.destroy();
+
+        const userCtx = document.getElementById('user-trends-chart').getContext('2d');
+        userChart = new Chart(userCtx, {
+            type: 'bar',
+            data: {
+                labels: data.userChartData.map(d => d.month),
+                datasets: [{
+                    label: '総ユーザー数',
+                    data: data.userChartData.map(d => d.total),
+                    backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 1,
+                    order: 2,
+                }, {
+                    label: 'アクティブユーザー数 (MAU)',
+                    data: data.userChartData.map(d => d.active),
+                    type: 'line',
+                    borderColor: 'rgba(236, 72, 153, 1)',
+                    backgroundColor: 'rgba(236, 72, 153, 0.2)',
+                    yAxisID: 'y1',
+                    order: 1,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { stacked: false },
+                    y: { beginAtZero: true, title: { display: true, text: '総ユーザー数' } },
+                    y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, beginAtZero: true, title: { display: true, text: 'アクティブユーザー数' } }
+                }
+            }
+        });
+
+        const projectCtx = document.getElementById('project-trends-chart').getContext('2d');
+        projectChart = new Chart(projectCtx, {
+            type: 'line',
+            data: {
+                labels: data.projectChartData.map(d => d.month),
+                datasets: [{
+                    label: '月間プロジェクト作成数',
+                    data: data.projectChartData.map(d => d.count),
+                    borderColor: 'rgba(16, 185, 129, 1)',
+                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                    fill: true,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
     } catch (error) {
-        console.error("ダッシュボード統計の取得エラー:", error);
-        showStatus("統計データの読み込みに失敗しました。", true);
+        console.error("ダッシュボードデータの取得エラー:", error);
+        showStatus("ダッシュボードデータの読み込みに失敗しました。", true);
+    } finally {
+        toggleLoading(false);
     }
 };
 
 const setupNotifications = () => {
     const form = document.getElementById('notification-form');
+    if (!form) return;
+
     const listBody = document.getElementById('notifications-list-body');
     const formTitle = document.getElementById('form-title');
     const cancelBtn = document.getElementById('cancel-edit-btn');
     let allNotifications = [];
+    const defaultContent = '<a href="URLを記載してください" target="_blank" style="color:#0000ff" >表示されるテキストを記載してください</a>';
 
     const resetForm = () => {
         form.reset();
         form.id.value = '';
         formTitle.textContent = '新規投稿';
         cancelBtn.classList.add('hidden');
+        form.content.value = defaultContent;
     };
+
+    resetForm();
     
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const data = { title: form.title.value.trim(), category: form.category.value, content: form.content.value.trim() };
+        const data = { 
+            title: form.title.value.trim(), 
+            category: form.category.value, 
+            content: form.content.value.trim(),
+            startDate: form.startDate.value,
+            endDate: form.endDate.value || null
+        };
         const id = form.id.value;
-
-        if (!data.title || !data.category || !data.content) {
-            showStatus('すべての項目を入力してください。', true);
+        if (!data.title || !data.category || !data.content || !data.startDate) {
+            showStatus('タイトル、カテゴリー、詳細、表示開始日は必須です。', true);
             return;
         }
-
         toggleLoading(true);
         try {
             if (id) {
@@ -123,7 +195,6 @@ const setupNotifications = () => {
             }
             resetForm();
         } catch (error) {
-            console.error("保存エラー:", error);
             showStatus(`エラーが発生しました: ${error.message}`, true);
         } finally {
             toggleLoading(false);
@@ -133,7 +204,8 @@ const setupNotifications = () => {
     cancelBtn.addEventListener('click', resetForm);
     
     listBody.addEventListener('click', async (e) => {
-        const target = e.target;
+        const target = e.target.closest('button');
+        if (!target) return;
         const id = target.dataset.id;
         if (!id) return;
         
@@ -144,20 +216,25 @@ const setupNotifications = () => {
                 form.title.value = notification.title;
                 form.category.value = notification.category;
                 form.content.value = notification.content;
+                form.startDate.value = notification.startDate;
+                form.endDate.value = notification.endDate || '';
                 formTitle.textContent = 'お知らせを編集';
                 cancelBtn.classList.remove('hidden');
                 form.scrollIntoView({ behavior: 'smooth' });
             }
         }
         if (target.classList.contains('delete-btn')) {
-            const confirmed = await showConfirmModal('削除の確認', `お知らせ「${target.dataset.title}」を本当に削除しますか？`);
+            const confirmed = await showConfirmModal(
+                '削除の確認', 
+                `お知らせ「${target.dataset.title}」を本当に削除しますか？`,
+                { confirmText: '削除', confirmColor: 'red', iconType: 'warning' }
+            );
             if (confirmed) {
                 toggleLoading(true);
                 try {
                     await deleteNotification(id);
                     showStatus('お知らせを削除しました。');
                 } catch (error) {
-                    console.error('削除エラー:', error);
                     showStatus(`削除中にエラーが発生しました: ${error.message}`, true);
                 } finally {
                     toggleLoading(false);
@@ -168,20 +245,22 @@ const setupNotifications = () => {
     
     getNotifications((notifications) => {
         allNotifications = notifications;
-        const listBody = document.getElementById('notifications-list-body');
+        if (!listBody) return;
         listBody.innerHTML = '';
         if (notifications.length === 0) {
-            listBody.innerHTML = '<tr><td colspan="4" class="text-center p-8 text-gray-500">投稿済みのお知らせはありません。</td></tr>';
+            listBody.innerHTML = '<tr><td colspan="5" class="text-center p-8 text-gray-500">投稿済みのお知らせはありません。</td></tr>';
             return;
         }
         notifications.forEach(n => {
             const tr = document.createElement('tr');
             tr.className = 'bg-white border-b hover:bg-gray-50';
-            const createdAt = n.createdAt ? n.createdAt.toDate().toLocaleString('ja-JP') : '日時不明';
+            const createdAt = toDisplayableDate(n.createdAt);
+            const period = `${n.startDate} ~ ${n.endDate || '無期限'}`;
             tr.innerHTML = `
                 <td class="px-6 py-4">${createdAt}</td>
                 <td class="px-6 py-4"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">${n.category}</span></td>
                 <td class="px-6 py-4 font-medium text-gray-900">${n.title}</td>
+                <td class="px-6 py-4 text-sm text-gray-600">${period}</td>
                 <td class="px-6 py-4 text-right space-x-4">
                     <button class="edit-btn font-medium text-indigo-600 hover:underline" data-id="${n.id}">編集</button>
                     <button class="delete-btn font-medium text-red-600 hover:underline" data-id="${n.id}" data-title="${n.title}">削除</button>
@@ -194,22 +273,29 @@ const setupNotifications = () => {
 
 const setupUsers = async () => {
     const listBody = document.getElementById('users-list-body');
+    if (!listBody) return;
     const searchInput = document.getElementById('user-search-input');
 
     const renderUsers = (users) => {
         listBody.innerHTML = '';
         if (users.length === 0) {
-            listBody.innerHTML = '<tr><td colspan="4" class="text-center p-8 text-gray-500">ユーザーが見つかりません。</td></tr>';
+            listBody.innerHTML = '<tr><td colspan="5" class="text-center p-8 text-gray-500">ユーザーが見つかりません。</td></tr>';
             return;
         }
         users.forEach(u => {
             const tr = document.createElement('tr');
             tr.className = 'bg-white border-b hover:bg-gray-50';
-            const joinedAt = u.createdAt ? new Date(u.createdAt).toLocaleString('ja-JP') : '不明';
+            const joinedAt = toDisplayableDate(u.createdAt);
             tr.innerHTML = `
-                <td class="px-6 py-4 font-medium text-gray-900">${u.displayName}</td>
+                <td class="px-6 py-4 font-medium text-gray-900"><a href="#" class="user-detail-link text-indigo-600 hover:underline" data-uid="${u.uid}">${u.displayName}</a></td>
                 <td class="px-6 py-4">${u.email}</td>
                 <td class="px-6 py-4">${joinedAt}</td>
+                <td class="px-6 py-4">
+                    <select class="plan-selector bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" data-uid="${u.uid}">
+                        <option value="Free" ${u.plan === 'Free' ? 'selected' : ''}>Free</option>
+                        <option value="Standard" ${u.plan === 'Standard' ? 'selected' : ''}>Standard</option>
+                    </select>
+                </td>
                 <td class="px-6 py-4 text-center">
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" class="sr-only peer admin-toggle" data-uid="${u.uid}" ${u.isAdmin ? 'checked' : ''}>
@@ -223,7 +309,10 @@ const setupUsers = async () => {
     
     searchInput.addEventListener('input', (e) => {
         const searchTerm = e.target.value.toLowerCase();
-        const filteredUsers = allUsers.filter(u => u.email && u.email.toLowerCase().includes(searchTerm));
+        const filteredUsers = allUsers.filter(u => 
+            (u.email && u.email.toLowerCase().includes(searchTerm)) || 
+            (u.displayName && u.displayName.toLowerCase().includes(searchTerm))
+        );
         renderUsers(filteredUsers);
     });
 
@@ -232,8 +321,11 @@ const setupUsers = async () => {
             const checkbox = e.target;
             const uid = checkbox.dataset.uid;
             const isAdmin = checkbox.checked;
-            
-            const confirmed = await showConfirmModal('権限の変更', `ユーザー(${uid})の管理者権限を${isAdmin ? '付与' : '剥奪'}しますか？`);
+            const confirmed = await showConfirmModal(
+                '権限の変更', 
+                `ユーザー(${uid})の管理者権限を${isAdmin ? '付与' : '剥奪'}しますか？`,
+                { confirmText: 'はい、変更する', cancelText: 'いいえ', confirmColor: 'indigo', iconType: 'question' }
+            );
             if (confirmed) {
                 toggleLoading(true);
                 try {
@@ -242,7 +334,6 @@ const setupUsers = async () => {
                     const user = allUsers.find(u => u.uid === uid);
                     if (user) user.isAdmin = isAdmin;
                 } catch (error) {
-                    console.error('権限更新エラー:', error);
                     showStatus(`エラーが発生しました: ${error.message}`, true);
                     checkbox.checked = !isAdmin;
                 } finally {
@@ -252,6 +343,44 @@ const setupUsers = async () => {
                 checkbox.checked = !isAdmin;
             }
         }
+
+        if (e.target.classList.contains('plan-selector')) {
+            const selector = e.target;
+            const uid = selector.dataset.uid;
+            const plan = selector.value;
+            const user = allUsers.find(u => u.uid === uid);
+            const originalPlan = user?.plan;
+
+            const confirmed = await showConfirmModal(
+                'プランの変更', 
+                `ユーザー(${uid})のプランを「${plan}」に変更しますか？`,
+                { confirmText: 'はい、変更する', cancelText: 'いいえ', confirmColor: 'indigo', iconType: 'question' }
+            );
+            if (confirmed) {
+                toggleLoading(true);
+                try {
+                    await setUserPlan({ uid, plan });
+                    showStatus('ユーザープランを更新しました。');
+                    if (user) user.plan = plan;
+                } catch (error) {
+                    showStatus(`エラーが発生しました: ${error.message}`, true);
+                    selector.value = originalPlan;
+                } finally {
+                    toggleLoading(false);
+                }
+            } else {
+                selector.value = originalPlan;
+            }
+        }
+    });
+
+    listBody.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const link = e.target.closest('.user-detail-link');
+        if(link) {
+            const uid = link.dataset.uid;
+            openUserDetailModal(uid);
+        }
     });
 
     try {
@@ -259,8 +388,78 @@ const setupUsers = async () => {
         allUsers = result.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         renderUsers(allUsers);
     } catch (error) {
-        console.error("ユーザーリスト取得エラー:", error);
         showStatus("ユーザーリストの読み込みに失敗しました。", true);
-        listBody.innerHTML = `<tr><td colspan="4" class="text-center p-8 text-red-500">エラー: ${error.message}</td></tr>`;
+        listBody.innerHTML = `<tr><td colspan="5" class="text-center p-8 text-red-500">エラー: ${error.message}</td></tr>`;
+    }
+};
+
+const setupUserDetailModal = () => {
+    const modal = document.getElementById('user-detail-modal');
+    const closeButton = document.getElementById('close-user-detail-modal');
+    if (modal && closeButton) {
+        closeButton.addEventListener('click', () => modal.classList.add('hidden'));
+    }
+};
+
+const openUserDetailModal = async (uid) => {
+    const modal = document.getElementById('user-detail-modal');
+    const title = document.getElementById('user-detail-modal-title');
+    const content = document.getElementById('user-detail-modal-content');
+    
+    title.textContent = "ユーザー詳細";
+    content.innerHTML = '<p>読み込み中...</p>';
+    modal.classList.remove('hidden');
+    
+    toggleLoading(true);
+    try {
+        const result = await getUserDetails({ uid });
+        const userDetails = result.data;
+        
+        title.textContent = `${userDetails.profile.displayName || '名前未設定'}さんの詳細`;
+        
+        let projectsHtml = '<h3>登録プロジェクト</h3><ul class="list-disc pl-5 mt-2">';
+        if (userDetails.projects && userDetails.projects.length > 0) {
+            userDetails.projects.forEach(p => {
+                projectsHtml += `<li>${p.name} (${p.code}) - ${p.isActive ? '有効' : '無効'}</li>`;
+            });
+        } else {
+            projectsHtml += '<li>登録プロジェクトはありません。</li>';
+        }
+        projectsHtml += '</ul>';
+
+        let timestampsHtml = '<h3 class="mt-4">最近の稼働履歴 (10件)</h3><ul class="list-disc pl-5 mt-2">';
+        if (userDetails.timestamps && userDetails.timestamps.length > 0) {
+            userDetails.timestamps.forEach(t => {
+                const clockInStr = toDisplayableDate(t.clockInTime, 'toLocaleString');
+                const clockOutStr = t.clockOutTime ? toDisplayableDate(t.clockOutTime, 'toLocaleTimeString') : '記録なし';
+                timestampsHtml += `<li>${clockInStr} ~ ${clockOutStr} - ${t.project.name}</li>`;
+            });
+        } else {
+            timestampsHtml += '<li>稼働履歴はありません。</li>';
+        }
+        timestampsHtml += '</ul>';
+        
+        const registeredDateStr = toDisplayableDate(userDetails.profile.createdAt);
+        const plan = userDetails.profile.plan || 'Free';
+        const planBadgeColor = plan === 'Standard' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+
+        content.innerHTML = `
+            <div class="space-y-4">
+                <p><strong>UID:</strong> ${uid}</p>
+                <p><strong>Email:</strong> ${userDetails.profile.email}</p>
+                <p><strong>登録日:</strong> ${registeredDateStr}</p>
+                <p><strong>プラン:</strong> <span class="font-semibold px-2 py-1 rounded-full ${planBadgeColor}">${plan}</span></p>
+                <hr>
+                ${projectsHtml}
+                <hr>
+                ${timestampsHtml}
+            </div>
+        `;
+
+    } catch(error) {
+        console.error("ユーザー詳細の取得エラー:", error);
+        content.innerHTML = `<p class="text-red-500">ユーザー詳細の取得に失敗しました: ${error.message}</p>`;
+    } finally {
+        toggleLoading(false);
     }
 };

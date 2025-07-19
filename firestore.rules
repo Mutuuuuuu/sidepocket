@@ -3,12 +3,35 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ユーザーは自身のデータ（サブコレクション含む）のみ読み書き可能
-    match /users/{userId}/{documents=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    // ▼▼▼ 【更新】ユーザー情報に関するルール ▼▼▼
+    // ユーザーのドキュメント本体 (/users/{userId}) に対するルール
+    match /users/{userId} {
+      // 読み取り: 自身のドキュメント、または管理者の場合は許可
+      allow read: if request.auth != null && (request.auth.uid == userId || request.auth.token.isAdmin == true);
+
+      // 作成: 自身のドキュメント作成を許可 (サインアップ時)
+      // 注意: Cloud Functions側で、作成時にplanが'Free'に設定されることを推奨します
+      allow create: if request.auth != null && request.auth.uid == userId;
+
+      // 更新: 管理者の場合は常に許可。
+      // 一般ユーザーの場合は、自身のドキュメントかつ'plan'フィールドが変更されていない場合のみ許可
+      allow update: if request.auth != null &&
+                     (request.auth.token.isAdmin == true ||
+                       (request.auth.uid == userId && request.resource.data.plan == resource.data.plan));
+
+      // 削除: 管理者のみ許可
+      allow delete: if request.auth.token.isAdmin == true;
     }
 
-    // ▼▼▼【ここから追加】お知らせ用のルール ▼▼▼
+    // ユーザーのサブコレクション (プロジェクトデータなど) に対するルール
+    match /users/{userId}/{documents=**} {
+      // 読み書き: 自身のサブコレクションは許可
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    // ▲▲▲ 【ここまで】 ▲▲▲
+
+
+    // お知らせ用のルール (既存のまま)
     match /notifications/{notificationId} {
       // ログインしていれば誰でも読み取り可能
       allow read: if request.auth != null;
@@ -16,6 +39,5 @@ service cloud.firestore {
       // isAdminクレームを持つ管理者のみ作成、更新、削除が可能
       allow write: if request.auth.token.isAdmin == true;
     }
-    // ▲▲▲【ここまで追加】▲▲▲
   }
 }

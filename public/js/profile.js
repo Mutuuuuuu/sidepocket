@@ -1,138 +1,131 @@
 import { getFirebaseServices } from './services/firebaseService.js';
-// getAuth をインポートに追加
-import { getAuth, updateProfile as updateAuthProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
-import { getUserProfile, updateUserProfile } from './services/firestoreService.js';
-import { toggleLoading, showStatus } from './services/uiService.js';
+import { getUserProfile, updateUserProfile, uploadUserIcon } from './services/firestoreService.js';
+import { showStatus, toggleLoading } from './services/uiService.js';
+import { httpsCallable } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js";
 
-// DOM要素
-let profileForm, iconPreview, iconInput, displayNameInput, lastNameInput, firstNameInput;
+const functions = getFirebaseServices().functions;
+const createCheckoutSession = httpsCallable(functions, 'createCheckoutSession');
 
-let currentAuthUser; // この変数はページの初期化時にのみ使用します
-let selectedFile = null;
+// StripeのPrice ID (Stripeダッシュボードで作成したものに置き換えてください)
+const MONTHLY_PLAN_PRICE_ID = 'price_xxxxxxxxxxxxxxxxx'; // 月額プラン
+const YEARLY_PLAN_PRICE_ID = 'price_yyyyyyyyyyyyyyyyy'; // 年額プラン (もしあれば)
 
-/**
- * プロフィールページの初期化
- * @param {object} user - ログインユーザーオブジェクト
- */
 export const initProfilePage = async (user) => {
-    currentAuthUser = user;
-
-    // DOM要素を取得
-    profileForm = document.getElementById('profile-form');
-    iconPreview = document.getElementById('user-icon-preview');
-    iconInput = document.getElementById('icon-upload-input');
-    displayNameInput = document.getElementById('display-name-input');
-    lastNameInput = document.getElementById('last-name-input');
-    firstNameInput = document.getElementById('first-name-input');
-
-    // イベントリスナーを設定
-    profileForm.addEventListener('submit', handleProfileUpdate);
-    iconInput.addEventListener('change', handleFileSelect);
-
-    // フォームに現在のプロフィール情報を設定
-    await populateProfileForm();
-    toggleLoading(false);
-};
-
-/**
- * Firestoreからプロフィール情報を取得し、フォームに表示する
- */
-const populateProfileForm = async () => {
-    const userProfile = await getUserProfile(currentAuthUser.uid);
-    if (!userProfile) {
-        showStatus('プロファイル情報の取得に失敗しました。', true);
-        return;
-    }
-
-    // Authの情報とFirestoreの情報を組み合わせる
-    displayNameInput.value = userProfile.displayName || currentAuthUser.displayName || '';
-    lastNameInput.value = userProfile.lastName || '';
-    firstNameInput.value = userProfile.firstName || '';
-    iconPreview.src = userProfile.photoURL || currentAuthUser.photoURL || 'images/sidepocket_symbol.png';
-    iconPreview.onerror = () => { iconPreview.src = 'images/sidepocket_symbol.png'; };
-};
-
-/**
- * ファイルが選択された際にプレビューを更新する
- * @param {Event} e - ファイル選択イベント
- */
-const handleFileSelect = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        selectedFile = file;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            iconPreview.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-};
-
-/**
- * プロフィール更新処理
- * @param {Event} e - フォーム送信イベント
- */
-const handleProfileUpdate = async (e) => {
-    e.preventDefault();
-
-    // 処理の直前に最新の認証状態を取得
-    const auth = getAuth();
-    const user = auth.currentUser;
-
-    // もしユーザーがいない（ログアウトしている）場合は処理を中断
     if (!user) {
-        toggleLoading(false);
-        showStatus('認証セッションが切れました。再度ログインしてください。', true);
+        window.location.href = '/login.html';
         return;
     }
+
+    const profileForm = document.getElementById('profile-form');
+    const displayNameInput = document.getElementById('display-name-input');
+    const lastNameInput = document.getElementById('last-name-input');
+    const firstNameInput = document.getElementById('first-name-input');
+    const userIconPreview = document.getElementById('user-icon-preview');
+    const iconUploadInput = document.getElementById('icon-upload-input');
+    const currentPlanEl = document.getElementById('current-plan');
+    const planDescriptionEl = document.getElementById('plan-description');
+    const upgradeButton = document.getElementById('upgrade-button');
 
     toggleLoading(true);
-
     try {
-        const { storage } = getFirebaseServices();
-        let photoURL = user.photoURL; // 常に最新のuserオブジェクトから取得
+        const userProfile = await getUserProfile(user.uid);
+        if (userProfile) {
+            displayNameInput.value = userProfile.displayName || '';
+            lastNameInput.value = userProfile.lastName || '';
+            firstNameInput.value = userProfile.firstName || '';
+            userIconPreview.src = userProfile.photoURL || 'images/sidepocket_symbol.png';
+            
+            // --- ▼▼▼ プラン情報の表示処理 ▼▼▼ ---
+            const plan = userProfile.plan || 'Free';
+            currentPlanEl.textContent = plan;
 
-        // 1. 画像が新しく選択されていたら、Storageにアップロード
-        if (selectedFile) {
-            // パスにも最新の user.uid を使用
-            const filePath = `profile-icons/${user.uid}/${Date.now()}_${selectedFile.name}`;
-            const storageRef = ref(storage, filePath);
-            const snapshot = await uploadBytes(storageRef, selectedFile);
-            photoURL = await getDownloadURL(snapshot.ref);
+            if (plan === 'Free') {
+                // 課金準備ができていないため、UIを変更
+                planDescriptionEl.textContent = '現在プランの変更はできません。freeプランですべての機能をご利用いただけます。';
+                upgradeButton.classList.remove('hidden'); // ボタンは表示
+                upgradeButton.disabled = true; // ボタンを無効化
+                upgradeButton.classList.add('bg-gray-400', 'cursor-not-allowed'); // スタイルをグレーアウトに変更
+                upgradeButton.classList.remove('bg-amber-500', 'hover:bg-amber-600'); // 元のスタイルを削除
+            } else if (plan === 'Standard') {
+                planDescriptionEl.textContent = 'Standardプランをご利用いただきありがとうございます！全ての機能をご利用いただけます。';
+                upgradeButton.classList.add('hidden');
+            }
+            // --- ▲▲▲ ここまで ▲▲▲ ---
         }
-
-        const newDisplayName = displayNameInput.value;
-        const newLastName = lastNameInput.value;
-        const newFirstName = firstNameInput.value;
-
-        // 2. Firebase Authenticationのプロフィールを更新
-        await updateAuthProfile(user, {
-            displayName: newDisplayName,
-            photoURL: photoURL
-        });
-
-        // 3. Firestoreのユーザー情報を更新
-        await updateUserProfile(user.uid, {
-            displayName: newDisplayName,
-            lastName: newLastName,
-            firstName: newFirstName,
-            photoURL: photoURL
-        });
-
-        showStatus('プロフィールを更新しました。ページをリロードします。', false, 2000);
-        // ヘッダーの情報も更新するためにページをリロード
-        setTimeout(() => window.location.reload(), 2000);
-
     } catch (error) {
-        console.error("Profile update error:", error);
-        if (error.code === 'storage/unauthorized') {
-            showStatus('ファイルのアップロード権限がありません。再ログインしてみてください。', true);
-        } else {
-            showStatus(`エラーが発生しました: ${error.message}`, true);
-        }
-        toggleLoading(false);
+        showStatus('プロフィールの読み込みに失敗しました。', true);
+        console.error("Profile load error:", error);
     } finally {
-        selectedFile = null; // 処理後にリセット
+        toggleLoading(false);
     }
+
+    profileForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        toggleLoading(true);
+        try {
+            const updatedProfile = {
+                displayName: displayNameInput.value,
+                lastName: lastNameInput.value,
+                firstName: firstNameInput.value,
+            };
+
+            // アイコン画像が選択されている場合はアップロード
+            if (iconUploadInput.files && iconUploadInput.files[0]) {
+                const file = iconUploadInput.files[0];
+                const photoURL = await uploadUserIcon(user.uid, file);
+                updatedProfile.photoURL = photoURL;
+            }
+
+            await updateUserProfile(user.uid, updatedProfile);
+            showStatus('プロフィールを更新しました。');
+        } catch (error) {
+            showStatus('プロフィールの更新に失敗しました。', true);
+            console.error("Profile update error:", error);
+        } finally {
+            toggleLoading(false);
+        }
+    });
+
+    iconUploadInput.addEventListener('change', () => {
+        if (iconUploadInput.files && iconUploadInput.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                userIconPreview.src = e.target.result;
+            };
+            reader.readAsDataURL(iconUploadInput.files[0]);
+        }
+    });
+
+    // --- ▼▼▼ アップグレードボタンのクリック処理 ▼▼▼ ---
+    upgradeButton.addEventListener('click', async () => {
+        // ボタンが無効化されている場合は何もしない
+        if (upgradeButton.disabled) {
+            return;
+        }
+
+        toggleLoading(true);
+        try {
+            // ここで月額か年額かを選択させるUIを将来的に追加できます
+            const priceId = MONTHLY_PLAN_PRICE_ID;
+
+            const result = await createCheckoutSession({ 
+                priceId: priceId,
+                successUrl: `${window.location.origin}/profile.html?upgraded=true`,
+                cancelUrl: window.location.href,
+            });
+            
+            const { sessionId } = result.data;
+            // Stripe.jsを使用してStripe Checkoutにリダイレクト
+            // このためには、HTMLにStripe.jsのスクリプトタグを追加する必要があります。
+            // 例: <script src="https://js.stripe.com/v3/"></script>
+            const stripe = Stripe('pk_test_YOUR_STRIPE_PUBLISHABLE_KEY'); // ★自身の公開可能キーに置き換える
+            await stripe.redirectToCheckout({ sessionId });
+
+        } catch (error) {
+            showStatus('決済ページの作成に失敗しました。時間をおいて再度お試しください。', true);
+            console.error("Stripe session creation error:", error);
+        } finally {
+            toggleLoading(false);
+        }
+    });
 };
