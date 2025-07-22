@@ -33,6 +33,13 @@
             border-radius: 0.75rem; /* 12px */
             color: #ffffff;
         }
+        .faq-answer {
+            display: none;
+            padding-left: 2.5rem; /* Qアイコンとのインデント調整 */
+        }
+        .faq-item.active .faq-answer {
+            display: block;
+        }
     </style>
 </head>
 <body class="bg-white text-gray-800">
@@ -61,7 +68,7 @@
                 <div class="grid md:grid-cols-2 gap-12 items-center py-16 sm:py-20">
                     <div class="text-center md:text-left scroll-animation fade-in-up">
                         <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight leading-tight">
-                            あなたの「時間」を、価値に変える。
+                            あなたの「時間」を、大切に。
                         </h1>
                         <p class="mt-6 max-w-xl mx-auto md:mx-0 text-lg text-gray-600" style="transition-delay: 0.2s;">
                             sidepocketは、フリーランスや副業ワーカーのためのシンプルな時間管理アプリ。面倒な稼働時間管理からあなたを解放し、創造的な仕事に集中する時間を取り戻します。
@@ -272,6 +279,50 @@
             </div>
         </section>
 
+        <section class="py-16 sm:py-24 bg-gray-50">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-3xl mx-auto">
+                    <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight scroll-animation fade-in-up">よくあるご質問</h2>
+                </div>
+                <div class="mt-12 max-w-3xl mx-auto divide-y divide-gray-200">
+                    <div class="py-6 scroll-animation fade-in-up" style="transition-delay: 0.2s;">
+                        <div class="faq-item">
+                            <button class="faq-question w-full text-left flex justify-between items-center text-gray-800">
+                                <span class="text-lg font-semibold">本当に無料で利用できますか？</span>
+                                <svg class="faq-arrow w-6 h-6 transform transition-transform" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                            </button>
+                            <div class="faq-answer mt-4 text-gray-600">
+                                <p>はい、現在はβ版として提供しており、すべての機能を無料でご利用いただけます。将来的に有料プランの提供を予定しておりますが、その際は事前にお知らせいたしますのでご安心ください。</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="py-6 scroll-animation fade-in-up" style="transition-delay: 0.4s;">
+                        <div class="faq-item">
+                            <button class="faq-question w-full text-left flex justify-between items-center text-gray-800">
+                                <span class="text-lg font-semibold">打刻を忘れた場合、後から修正できますか？</span>
+                                <svg class="faq-arrow w-6 h-6 transform transition-transform" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                            </button>
+                            <div class="faq-answer mt-4 text-gray-600">
+                                <p>はい、可能です。過去の日時に遡って、稼働時間の追加や修正を簡単に行うことができます。</p>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="py-6 scroll-animation fade-in-up" style="transition-delay: 0.6s;">
+                        <div class="faq-item">
+                            <button class="faq-question w-full text-left flex justify-between items-center text-gray-800">
+                                <span class="text-lg font-semibold">データはどのように活用できますか？</span>
+                                <svg class="faq-arrow w-6 h-6 transform transition-transform" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                            </button>
+                            <div class="faq-answer mt-4 text-gray-600">
+                                <p>記録したデータは、プロジェクトごとのレポートで可視化できるほか、CSVやPDF形式でエクスポートできます。請求書作成時の稼働報告や、確定申告時の資料としてご活用いただけます。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
         <section class="bg-gradient-to-r from-orange-400 via-pink-500 to-blue-600 overflow-hidden">
             <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
                 <div class="text-center text-white">
@@ -319,6 +370,31 @@
 
             targets.forEach(target => {
                 observer.observe(target);
+            });
+
+            const faqItems = document.querySelectorAll('.faq-item');
+            faqItems.forEach(item => {
+                const question = item.querySelector('.faq-question');
+                const answer = item.querySelector('.faq-answer');
+                const arrow = item.querySelector('.faq-arrow');
+                const plusIcon = '<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />';
+                const minusIcon = '<path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4" />';
+
+                question.addEventListener('click', () => {
+                    const isOpen = item.classList.contains('active');
+                    
+                    faqItems.forEach(i => {
+                        i.classList.remove('active');
+                        i.querySelector('.faq-answer').style.maxHeight = '0px';
+                        i.querySelector('.faq-arrow').innerHTML = plusIcon;
+                    });
+
+                    if (!isOpen) {
+                        item.classList.add('active');
+                        answer.style.maxHeight = answer.scrollHeight + 'px';
+                        arrow.innerHTML = minusIcon;
+                    }
+                });
             });
         });
     </script>
