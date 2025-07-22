@@ -44,7 +44,6 @@
 </head>
 <body class="bg-white text-gray-800">
 
-    <!-- ヘッダーセクション -->
     <header class="bg-white shadow-sm sticky top-0 z-50">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
@@ -64,7 +63,6 @@
     </header>
 
     <main>
-        <!-- ヒーローセクション -->
         <section class="bg-gray-50 overflow-hidden">
             <div class="container mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-20 text-center">
                 <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight leading-tight scroll-animation fade-in-up">
@@ -84,57 +82,94 @@
             </div>
         </section>
 
-        <!-- メインビジュアル -->
         <div class="bg-gray-50 pb-16">
             <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-                <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="アプリのダッシュボード画面イメージ" class="rounded-xl shadow-2xl mx-auto scroll-animation fade-in-up" onerror="this.onerror=null;this.src='https://placehold.co/1200x600/e2e8f0/475569?text=Dashboard+Image';">
+                <img src="images/PJ管理イメージ.jpg" alt="アプリのダッシュボード画面イメージ" class="rounded-xl shadow-2xl mx-auto scroll-animation fade-in-up" onerror="this.onerror=null;this.src='https://placehold.co/1200x600/e2e8f0/475569?text=Dashboard+Image';">
             </div>
         </div>
 
-        <!-- 課題提起セクション -->
         <section class="py-16 sm:py-24 bg-white overflow-hidden">
             <div class="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center">
                     <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight scroll-animation fade-in-up">こんな時間の悩みを抱えていませんか？</h2>
                     <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600 scroll-animation fade-in-up" style="transition-delay: 0.2s;">フリーランスや副業でよくある、時間管理の課題。</p>
                 </div>
-                <div class="mt-12 grid gap-8 md:grid-cols-3">
-                    <div class="bg-gray-50 p-8 rounded-xl shadow-sm scroll-animation fade-in-up">
-                        <div class="flex items-center justify-center h-12 w-12 rounded-full bg-blue-500 text-white mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008Zm0 3h.008v.008H8.25v-.008Zm0 3h.008v.008H8.25v-.008Zm3-6h.008v.008H11.25v-.008Zm0 3h.008v.008H11.25v-.008Zm0 3h.008v.008H11.25v-.008Zm3-6h.008v.008H14.25v-.008Zm0 3h.008v.008H14.25v-.008ZM6 18V9.75a3 3 0 0 1 3-3h4.5a3 3 0 0 1 3 3v8.25a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3Z" /></svg>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900">稼働時間の集計が大変</h3>
-                        <p class="mt-2 text-base text-gray-600">プロジェクトごとに稼働時間を集計し、稼働報告書を作成したり会計ソフトに入力するのが月末の大きな負担になっている。</p>
+                <div class="mt-12 grid gap-8 md:grid-cols-2 items-center">
+                    <div class="scroll-animation fade-in-left">
+                        <img src="images/PCwomen.jpg" alt="時間管理に悩む女性" class="rounded-lg shadow-xl">
                     </div>
-                    <div class="bg-gray-50 p-8 rounded-xl shadow-sm scroll-animation fade-in-up" style="transition-delay: 0.2s;">
-                        <div class="flex items-center justify-center h-12 w-12 rounded-full bg-blue-500 text-white mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.75h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5-1.5a1.5 1.5 0 0 1-1.5-1.5V6.75A1.5 1.5 0 0 1 3.75 5.25h16.5a1.5 1.5 0 0 1 1.5 1.5v10.5a1.5 1.5 0 0 1-1.5 1.5H3.75Z" /></svg>
+                    <div class="space-y-8 scroll-animation fade-in-right">
+                        <div class="bg-gray-50 p-6 rounded-xl shadow-sm">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-blue-500 text-white mr-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008Zm0 3h.008v.008H8.25v-.008Zm0 3h.008v.008H8.25v-.008Zm3-6h.008v.008H11.25v-.008Zm0 3h.008v.008H11.25v-.008Zm0 3h.008v.008H11.25v-.008Zm3-6h.008v.008H14.25v-.008Zm0 3h.008v.008H14.25v-.008ZM6 18V9.75a3 3 0 0 1 3-3h4.5a3 3 0 0 1 3 3v8.25a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3Z" /></svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-bold text-gray-900">稼働時間の集計が大変</h3>
+                                    <p class="mt-1 text-base text-gray-600">プロジェクトごとの集計や報告書作成が月末の負担に。</p>
+                                </div>
+                            </div>
                         </div>
-                        <h3 class="text-xl font-bold text-gray-900">プロジェクトや案件の正確な管理が大変</h3>
-                        <p class="mt-2 text-base text-gray-600">複数のプロジェクトを抱えていると、稼働実績、収益、契約期間、単価など管理すべきことがたくさんあって管理しきれない。</p>
-                    </div>
-                    <div class="bg-gray-50 p-8 rounded-xl shadow-sm scroll-animation fade-in-up" style="transition-delay: 0.4s;">
-                        <div class="flex items-center justify-center h-12 w-12 rounded-full bg-blue-500 text-white mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+                         <div class="bg-gray-50 p-6 rounded-xl shadow-sm">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-blue-500 text-white mr-4">
+                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.75h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5-1.5a1.5 1.5 0 0 1-1.5-1.5V6.75A1.5 1.5 0 0 1 3.75 5.25h16.5a1.5 1.5 0 0 1 1.5 1.5v10.5a1.5 1.5 0 0 1-1.5 1.5H3.75Z" /></svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-bold text-gray-900">プロジェクト管理が煩雑</h3>
+                                    <p class="mt-1 text-base text-gray-600">複数案件の収益、契約、単価…管理しきれない。</p>
+                                </div>
+                            </div>
                         </div>
-                        <h3 class="text-xl font-bold text-gray-900">使いやすい時間管理システムがない</h3>
-                        <p class="mt-2 text-base text-gray-600">勤怠システムや打刻システムは法人向けが多くフリーランス・副業ワーカーが使いやすい時間管理ツールがなかなか見つからない。</p>
+                         <div class="bg-gray-50 p-6 rounded-xl shadow-sm">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-blue-500 text-white mr-4">
+                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-bold text-gray-900">最適なツールがない</h3>
+                                    <p class="mt-1 text-base text-gray-600">法人向けツールは複雑で、個人で使いやすいものがない。</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- 機能紹介セクション -->
         <section id="features" class="py-16 sm:py-24 bg-gray-50 overflow-hidden">
             <div class="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center">
                     <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight scroll-animation fade-in-up">side pocketが、すべて解決します</h2>
                     <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600 scroll-animation fade-in-up" style="transition-delay: 0.2s;">あなたの時間管理をシンプルにする、直感的でパワフルな機能。</p>
                 </div>
-
-                <!-- Feature 1 -->
-                <div class="mt-16 grid md:grid-cols-2 gap-16 items-center">
+                
+                 <div class="mt-16 grid md:grid-cols-2 gap-16 items-center">
                     <div class="scroll-animation fade-in-left">
+                        <div class="flex items-center mb-4">
+                            <div class="feature-icon bg-pink-500 flex items-center justify-center mr-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m-7.5-2.28a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Zm4.5 9.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m-7.5-2.28a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Z" /></svg>
+                            </div>
+                            <h3 class="text-2xl font-bold text-gray-900">チームでの利用にも最適</h3>
+                        </div>
+                        <p class="mt-4 text-lg text-gray-600">個人の時間管理はもちろん、チームやプロジェクト単位での利用も可能です。メンバーの稼働状況をリアルタイムで把握し、プロジェクトの進捗管理を効率化します。</p>
+                        <ul class="mt-6 space-y-2 text-gray-600">
+                            <li class="flex items-start"><span class="text-blue-500 mr-2 mt-1">✓</span><span>メンバーごとの稼働時間を可視化</span></li>
+                            <li class="flex items-start"><span class="text-blue-500 mr-2 mt-1">✓</span><span>プロジェクト全体の工数を正確に把握</span></li>
+                            <li class="flex items-start"><span class="text-blue-500 mr-2 mt-1">✓</span><span>レポート共有で透明性の高い進捗管理を実現</span></li>
+                        </ul>
+                    </div>
+                    <div class="mt-10 md:mt-0 scroll-animation fade-in-right">
+                        <img src="images/nakama.jpg" alt="チームでの利用イメージ" class="rounded-lg shadow-xl" onerror="this.onerror=null;this.src='https://placehold.co/500x400/e2e8f0/475569?text=Team+Feature+Image';">
+                    </div>
+                </div>
+
+
+                <div class="mt-24 grid md:grid-cols-2 gap-16 items-center">
+                     <div class="order-2 md:order-1 mt-10 md:mt-0 scroll-animation fade-in-left">
+                        <img src="https://images.unsplash.com/photo-1620325867582-51a2958dfd89?q=80&w=1972&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="ワンクリック打刻のイメージ" class="rounded-lg shadow-xl" onerror="this.onerror=null;this.src='https://placehold.co/500x400/e2e8f0/475569?text=Feature+1+Image';">
+                    </div>
+                    <div class="order-1 md:order-2 scroll-animation fade-in-right">
                         <div class="flex items-center mb-4">
                              <div class="feature-icon bg-green-500 flex items-center justify-center mr-4">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
@@ -148,17 +183,13 @@
                             <li class="flex items-start"><span class="text-blue-500 mr-2 mt-1">✓</span><span>記録の修正もラクラク</span></li>
                         </ul>
                     </div>
-                    <div class="mt-10 md:mt-0 scroll-animation fade-in-right">
-                        <img src="https://images.unsplash.com/photo-1620325867582-51a2958dfd89?q=80&w=1972&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="ワンクリック打刻のイメージ" class="rounded-lg shadow-xl" onerror="this.onerror=null;this.src='https://placehold.co/500x400/e2e8f0/475569?text=Feature+1+Image';">
-                    </div>
                 </div>
 
-                <!-- Feature 2 -->
                 <div class="mt-24 grid md:grid-cols-2 gap-16 items-center">
-                    <div class="order-2 md:order-1 mt-10 md:mt-0 scroll-animation fade-in-left">
-                         <img src="https://images.unsplash.com/photo-1563986768609-322da13575f3?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="レポートと収支管理のイメージ" class="rounded-lg shadow-xl" onerror="this.onerror=null;this.src='https://placehold.co/500x400/e2e8f0/475569?text=Feature+2+Image';">
+                    <div class="scroll-animation fade-in-left">
+                         <img src="images/稼働サマリ.jpg" alt="レポートと収支管理のイメージ" class="rounded-lg shadow-xl" onerror="this.onerror=null;this.src='https://placehold.co/500x400/e2e8f0/475569?text=Feature+2+Image';">
                     </div>
-                    <div class="order-1 md:order-2 scroll-animation fade-in-right">
+                    <div class="scroll-animation fade-in-right">
                         <div class="flex items-center mb-4">
                              <div class="feature-icon bg-purple-500 flex items-center justify-center mr-4">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" /></svg>
@@ -174,9 +205,11 @@
                     </div>
                 </div>
 
-                 <!-- Feature 3 -->
-                <div class="mt-24 grid md:grid-cols-2 gap-16 items-center">
-                    <div class="scroll-animation fade-in-left">
+                 <div class="mt-24 grid md:grid-cols-2 gap-16 items-center">
+                     <div class="order-2 md:order-1 mt-10 md:mt-0 scroll-animation fade-in-left">
+                        <img src="images/discuss.jpg" alt="Googleカレンダー連携のイメージ" class="rounded-lg shadow-xl" onerror="this.onerror=null;this.src='https://placehold.co/500x400/e2e8f0/475569?text=Feature+3+Image';">
+                    </div>
+                    <div class="order-1 md:order-2 scroll-animation fade-in-right">
                         <div class="flex items-center mb-4">
                              <div class="feature-icon bg-yellow-500 flex items-center justify-center mr-4">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0h18M12 12.75h.008v.008H12v-.008Z" /></svg>
@@ -189,14 +222,10 @@
                             <li class="flex items-start"><span class="text-blue-500 mr-2 mt-1">✓</span><span>カレンダーベースで一日を振り返り</span></li>
                         </ul>
                     </div>
-                    <div class="mt-10 md:mt-0 scroll-animation fade-in-right">
-                        <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Googleカレンダー連携のイメージ" class="rounded-lg shadow-xl" onerror="this.onerror=null;this.src='https://placehold.co/500x400/e2e8f0/475569?text=Feature+3+Image';">
-                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- 料金プランセクション -->
         <section class="py-16 sm:py-24 bg-white overflow-hidden">
             <div class="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center">
@@ -206,9 +235,7 @@
                     </p>
                 </div>
                 
-                <!-- プランカード -->
                 <div class="mt-12 grid gap-8 md:grid-cols-2 max-w-4xl mx-auto">
-                    <!-- Free Plan -->
                     <div class="border border-gray-200 rounded-2xl shadow-lg p-8 flex flex-col scroll-animation fade-in-up">
                         <h3 class="text-2xl font-bold text-gray-900">Free</h3>
                         <p class="mt-2 text-gray-600">まずは無料で始めたい方に</p>
@@ -220,7 +247,6 @@
                             無料でアカウント作成
                         </a>
                     </div>
-                    <!-- Standard Plan -->
                     <div class="border-2 border-blue-500 rounded-2xl shadow-lg p-8 flex flex-col bg-blue-50 relative scroll-animation fade-in-up" style="transition-delay: 0.2s;">
                          <div class="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2">
                             <span class="px-3 py-1 text-sm font-semibold tracking-wide text-white bg-blue-500 rounded-full">おすすめ</span>
@@ -236,7 +262,6 @@
                     </div>
                 </div>
 
-                <!-- 機能比較表 -->
                 <div class="mt-16 max-w-4xl mx-auto scroll-animation fade-in-up">
                     <h3 class="text-xl font-bold text-center mb-8">機能比較</h3>
                     <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
@@ -290,7 +315,6 @@
             </div>
         </section>
 
-        <!-- CTAセクション -->
         <section class="bg-blue-600 overflow-hidden">
             <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
                 <div class="text-center text-white">
@@ -305,7 +329,6 @@
 
     </main>
 
-    <!-- フッター -->
     <footer class="bg-gray-100">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="text-center text-sm text-gray-500">
@@ -322,7 +345,6 @@
         </div>
     </footer>
 
-    <!-- アニメーション用のJavaScript -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const targets = document.querySelectorAll('.scroll-animation');

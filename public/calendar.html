@@ -4,115 +4,83 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>カレンダー連携 - sidepocket</title>
-    <link rel="icon" href="images/sidepocket_symbol.png">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="css/style.css" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-    <style> body { font-family: 'Noto Sans JP', sans-serif; } </style>
+    <style>
+        body { font-family: 'Noto+Sans+JP', sans-serif; }
+    </style>
 </head>
 <body class="bg-gray-100">
-
-    <div id="loading-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center z-50">
+    <div id="loading-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center z-50 hidden">
         <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
     </div>
-
-    <div id="app-container" class="relative min-h-screen md:flex opacity-0">
+    
+    <div id="app-container" class="relative min-h-screen md:flex">
         <div id="header-placeholder"></div>
-        <div id="content-container" class="relative md:ml-20 transition-all duration-300 ease-in-out flex-1 flex flex-col">
-            <header class="flex items-center p-4 bg-white border-b sticky top-0 z-20 h-20">
-                <div class="flex-1">
-                    <div class="md:hidden">
-                        <button id="mobile-menu-button" class="text-gray-500 hover:text-gray-600 focus:outline-none">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
 
-                <div class="flex-1 flex justify-center">
-                    <div class="hidden md:flex">
-                        <img src="images/sidepocket_Logo.png" alt="Sidepocket Logo" class="h-10">
-                    </div>
-                </div>
-
-                <div class="flex-1 flex justify-end items-center gap-4">
-                    <div class="flex items-center gap-2">
-                        <span id="header-display-name" class="text-gray-700 hidden sm:inline">Guest</span>
-                        <a href="/profile.html">
-                            <img id="header-user-icon" class="h-10 w-10 rounded-full object-cover" src="images/sidepocket_symbol.png" alt="User icon">
-                        </a>
-                    </div>
-                    <div class="relative">
-                        <button id="notification-button" class="text-gray-500 hover:text-gray-600">
-                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                            </svg>
-                        </button>
-                        <div id="notification-panel"
-                            class="hidden absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl z-50 border border-gray-200"
-                            style="transform: translateX(-100%);">
-                            <div class="p-4 border-b"><h3 class="font-bold text-gray-800">お知らせ</h3></div>
-                            <ul id="notification-list" class="divide-y max-h-96 overflow-y-auto"></ul>
-                        </div>
-                    </div>
-                </div>
-            </header>
-            
-            <main class="p-6 md:p-8 flex-1 overflow-y-auto">
+        <div id="content-container" class="relative md:ml-20 flex-1 flex flex-col transition-all duration-300 ease-in-out">
+            <main class="p-6 md:p-8 flex-1">
                 <h1 class="text-3xl font-bold text-gray-800 mb-6">カレンダー連携</h1>
                 <div id="status-message-container"></div>
-                
-                <!-- ▼▼▼ 【修正】コンテンツをdivで囲み、max-w-4xlとmx-autoを適用して中央寄せにする ▼▼▼ -->
-                <div class="max-w-4xl mx-auto">
-                    <div class="bg-white p-8 rounded-xl shadow-md">
-                        <div id="auth-container">
-                            <p class="mb-4">Google Calendarと連携して、予定を稼働実績として取り込みます。</p>
-                            <button id="authorize-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
-                                Google Calendarと連携する
-                            </button>
-                            <button id="signout-button" class="hidden ml-4 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">
-                                連携を解除
-                            </button>
-                        </div>
-                        
-                        <div id="event-container" class="hidden">
-                             <div class="flex flex-wrap items-center gap-4 mb-4">
-                                <div>
-                                    <label for="calendar-start-date" class="block text-sm font-medium text-gray-700">開始日</label>
-                                    <input type="date" id="calendar-start-date" class="border-gray-300 rounded-md">
-                                </div>
-                                 <div>
-                                    <label for="calendar-end-date" class="block text-sm font-medium text-gray-700">終了日</label>
-                                    <input type="date" id="calendar-end-date" class="border-gray-300 rounded-md">
-                                </div>
-                                <button id="fetch-events-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg self-end">
-                                    予定を取得
+
+                <div class="space-y-8 max-w-4xl mx-auto">
+                    <div class="bg-white p-6 rounded-xl shadow-md">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-3">STEP 1: Google Calendarと連携</h2>
+                        <div id="auth-container" class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <p class="text-gray-600 flex-grow">Google Calendarと連携して、予定を稼働実績として取り込みます。</p>
+                            <div class="flex-shrink-0">
+                                <button id="authorize-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow transition-colors">
+                                    連携する
+                                </button>
+                                <button id="signout-button" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow transition-colors hidden">
+                                    連携を解除
                                 </button>
                             </div>
-    
-                            <h2 class="text-2xl font-bold text-gray-800 my-4">カレンダーの予定</h2>
-                            <p class="text-sm text-gray-600 mb-4">登録したい予定にチェックを入れ、対応するプロジェクトを割り当ててください。</p>
-                            <form id="import-events-form">
-                                <div id="events-list" class="divide-y divide-gray-200 border rounded-md max-h-96 overflow-y-auto">
-                                    <p class="p-4 text-center text-gray-500">連携後、日付を指定して予定を読み込んでください。</p>
-                                </div>
-                                 <div class="text-right mt-6">
-                                    <button type="submit" id="import-submit-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg disabled:opacity-50" disabled>
-                                        選択した予定を登録
-                                    </button>
-                                </div>
-                            </form>
                         </div>
                     </div>
+
+                    <div id="event-container" class="bg-white p-6 rounded-xl shadow-md hidden">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4">STEP 2: 予定を読み込む</h2>
+                        
+                        <div class="mb-6">
+                            <h3 class="font-semibold text-gray-700 mb-2">読み込むカレンダーを選択してください</h3>
+                            <div id="calendar-list-container" class="space-y-2 border rounded-lg p-4 max-h-48 overflow-y-auto">
+                                <p class="text-gray-500">カレンダーを読み込んでいます...</p>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                            <div>
+                                <label for="calendar-start-date" class="block text-sm font-medium text-gray-700">開始日</label>
+                                <input type="date" id="calendar-start-date" name="start-date" class="mt-1 block w-full p-2 border-gray-300 rounded-md shadow-sm">
+                            </div>
+                            <div>
+                                <label for="calendar-end-date" class="block text-sm font-medium text-gray-700">終了日</label>
+                                <input type="date" id="calendar-end-date" name="end-date" class="mt-1 block w-full p-2 border-gray-300 rounded-md shadow-sm">
+                            </div>
+                            <button id="fetch-events-button" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow transition-colors">
+                                予定を読み込む
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="import-container" class="bg-white p-6 rounded-xl shadow-md hidden">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4">STEP 3: 稼働実績として登録</h2>
+                        <form id="import-events-form">
+                            <div id="events-list" class="divide-y divide-gray-200 border rounded-lg mb-4 max-h-96 overflow-y-auto">
+                                <p class="p-4 text-center text-gray-500">連携後、日付を指定して予定を読み込んでください。</p>
+                            </div>
+                            <div class="text-right">
+                                <button id="import-submit-button" type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow transition-colors" disabled>
+                                    選択した予定を登録
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
                 </div>
             </main>
-
-            <!-- ▼▼▼ 広告表示エリア ▼▼▼ -->
-            <div id="ad-container" class="hidden px-6 md:px-8"></div>
-            <!-- ▲▲▲ ここまで ▲▲▲ -->
-
         </div>
     </div>
     

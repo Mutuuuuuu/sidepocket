@@ -18,8 +18,8 @@ let allUsers = [];
 let userChart = null;
 let projectChart = null;
 
-const toDisplayableDate = (timestamp, format = 'toLocaleString') => {
-    if (!timestamp) return '日時不明';
+const toDate = (timestamp) => {
+    if (!timestamp) return null;
     let date;
     if (timestamp._seconds !== undefined) {
         date = new Date(timestamp._seconds * 1000 + (timestamp._nanoseconds || 0) / 1000000);
@@ -28,10 +28,19 @@ const toDisplayableDate = (timestamp, format = 'toLocaleString') => {
     } else if (typeof timestamp.toDate === 'function') {
         date = timestamp.toDate();
     } else {
-        return '不正な日時形式';
+        return null;
     }
-    if (isNaN(date.getTime())) return '不正な日時';
-    return format === 'toLocaleString' ? date.toLocaleString('ja-JP') : date.toLocaleTimeString('ja-JP');
+    if (isNaN(date.getTime())) return null;
+    return date;
+};
+
+const toDisplayableDate = (timestamp, format = 'toLocaleString') => {
+    const date = toDate(timestamp);
+    if (!date) return '日時不明';
+
+    if (format === 'toLocaleString') return date.toLocaleString('ja-JP');
+    if (format === 'toString') return date.toString(); // 計算用にDateオブジェクトを返す
+    return date.toLocaleTimeString('ja-JP');
 };
 
 const formatLeadTime = (milliseconds) => {
@@ -484,7 +493,10 @@ const openUserDetailModal = async (uid) => {
 
 const setupContacts = async () => {
     const listBody = document.getElementById('contacts-list-body');
-    if (!listBody) return;
+    const statusFilter = document.getElementById('contact-status-filter');
+    if (!listBody || !statusFilter) return;
+
+    let allContacts = []; 
 
     const renderContacts = (contacts) => {
         listBody.innerHTML = '';
@@ -493,22 +505,21 @@ const setupContacts = async () => {
             return;
         }
 
-        const statusColors = {
-            '未着手': 'bg-red-100 text-red-800',
-            '対応中': 'bg-yellow-100 text-yellow-800',
-            '完了': 'bg-green-100 text-green-800',
-        };
-
         contacts.forEach(c => {
             const tr = document.createElement('tr');
             tr.className = 'bg-white border-b hover:bg-gray-50';
-            const createdAt = toDisplayableDate(c.createdAt);
             
-            const l1LeadTime = (c.startedAt && c.createdAt) ? formatLeadTime(c.startedAt.toMillis() - c.createdAt.toMillis()) : '---';
-            const closeLeadTime = (c.completedAt && c.createdAt) ? formatLeadTime(c.completedAt.toMillis() - c.createdAt.toMillis()) : '---';
+            const createdAtDate = toDate(c.createdAt);
+            const startedAtDate = toDate(c.startedAt);
+            const completedAtDate = toDate(c.completedAt);
+
+            const createdAtStr = createdAtDate ? createdAtDate.toLocaleString('ja-JP') : '日時不明';
+            
+            const l1LeadTime = (startedAtDate && createdAtDate) ? formatLeadTime(startedAtDate.getTime() - createdAtDate.getTime()) : '---';
+            const closeLeadTime = (completedAtDate && createdAtDate) ? formatLeadTime(completedAtDate.getTime() - createdAtDate.getTime()) : '---';
 
             tr.innerHTML = `
-                <td class="px-4 py-4 whitespace-nowrap">${createdAt}</td>
+                <td class="px-4 py-4 whitespace-nowrap">${createdAtStr}</td>
                 <td class="px-4 py-4">
                     <select class="contact-status-selector bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2" data-id="${c.id}">
                         <option value="未着手" ${c.status === '未着手' ? 'selected' : ''}>未着手</option>
@@ -525,6 +536,31 @@ const setupContacts = async () => {
             listBody.appendChild(tr);
         });
     };
+    
+    const filterAndRender = () => {
+        const filterValue = statusFilter.value;
+        
+        const filteredContacts = filterValue === 'all'
+            ? allContacts
+            : allContacts.filter(c => c.status === filterValue);
+        
+        const statusOrder = { '未着手': 1, '対応中': 2, '完了': 3 };
+        
+        const sortedContacts = filteredContacts.sort((a, b) => {
+            const statusA = statusOrder[a.status] || 99;
+            const statusB = statusOrder[b.status] || 99;
+            if (statusA !== statusB) {
+                return statusA - statusB;
+            }
+            const dateA = toDate(a.createdAt)?.getTime() || 0;
+            const dateB = toDate(b.createdAt)?.getTime() || 0;
+            return dateB - dateA;
+        });
+
+        renderContacts(sortedContacts);
+    };
+
+    statusFilter.addEventListener('change', filterAndRender);
 
     listBody.addEventListener('change', async (e) => {
         if (e.target.classList.contains('contact-status-selector')) {
@@ -536,9 +572,11 @@ const setupContacts = async () => {
             try {
                 await updateContactStatus({ contactId: id, newStatus });
                 showStatus('ステータスを更新しました。');
-                // 再描画してリードタイムなどを更新
+                
                 const result = await getContacts();
-                renderContacts(result.data);
+                allContacts = result.data;
+                filterAndRender();
+
             } catch (error) {
                 showStatus(`エラーが発生しました: ${error.message}`, true);
             } finally {
@@ -549,7 +587,8 @@ const setupContacts = async () => {
 
     try {
         const result = await getContacts();
-        renderContacts(result.data);
+        allContacts = result.data;
+        filterAndRender();
     } catch (error) {
         showStatus("お問い合わせの読み込みに失敗しました。", true);
         listBody.innerHTML = `<tr><td colspan="7" class="text-center p-8 text-red-500">エラー: ${error.message}</td></tr>`;
