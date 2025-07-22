@@ -129,3 +129,39 @@ export const showConfirmModal = (title, message, options = {}) => {
         };
     });
 };
+
+/**
+ * モーダルを開く
+ * @param {string} modalId 対象モーダルのID
+ */
+export const openModal = (modalId) => {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
+};
+
+/**
+ * モーダルを閉じる
+ * @param {string} modalId 対象モーダルのID
+ */
+export const closeModal = (modalId) => {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+};
+
+/**
+ * モーダルのクローズイベント（背景クリック、キャンセルボタン）を設定する
+ * @param {string} modalId 対象モーダルのID
+ */
+export const setupModalClosers = (modalId) => {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+
+    const closers = modal.querySelectorAll('.modal-overlay, .modal-cancel-button');
+    closers.forEach(closer => {
+        closer.addEventListener('click', () => closeModal(modalId));
+    });
+};
