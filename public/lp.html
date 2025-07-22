@@ -43,7 +43,7 @@
 </head>
 <body class="bg-white text-gray-800">
 
-    <header class="bg-white shadow-sm sticky top-0 z-50">
+    <header class="bg-white shadow-sm sticky top-0 z-40">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
                 <div class="flex-shrink-0">
@@ -89,16 +89,11 @@
         </section>
 
 
-        <section class="py-16 sm:py-24 bg-white overflow-hidden">
-            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="grid md:grid-cols-2 gap-16 items-center">
-                    <div class="scroll-animation fade-in-left">
-                        <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">こんな時間の悩みを<br>抱えていませんか？</h2>
-                        <p class="mt-4 text-lg text-gray-600">フリーランスや副業でよくある、時間管理の課題。</p>
-                    </div>
-                     <div class="scroll-animation fade-in-right">
-                        <img src="https://raw.githubusercontent.com/Mutuuuuuu/sidepocket/main/public/images/PCwoman.png" alt="時間管理に悩む女性" class="w-full h-auto max-w-sm mx-auto">
-                    </div>
+        <section class="relative py-16 sm:py-24 bg-white overflow-hidden">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div class="text-center max-w-3xl mx-auto">
+                    <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight scroll-animation fade-in-up">こんな時間の悩みを抱えていませんか？</h2>
+                    <p class="mt-4 text-lg text-gray-600 scroll-animation fade-in-up" style="transition-delay: 0.2s;">フリーランスや副業でよくある、時間管理の課題。</p>
                 </div>
                 <div class="mt-16 grid gap-8 md:grid-cols-3">
                     <div class="bg-gray-50 p-8 rounded-xl scroll-animation fade-in-up">
@@ -124,18 +119,16 @@
                     </div>
                 </div>
             </div>
+            <div class="absolute top-0 right-0 h-full w-1/3 z-0 hidden md:block">
+                <img src="https://raw.githubusercontent.com/Mutuuuuuu/sidepocket/main/public/images/PCwoman.png" class="absolute h-full w-auto object-contain object-right opacity-10 right-0 top-0">
+            </div>
         </section>
 
-        <section id="features" class="py-16 sm:py-24 bg-gray-50 overflow-hidden">
-            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-                 <div class="grid md:grid-cols-2 gap-16 items-center">
-                    <div class="scroll-animation fade-in-left text-center md:text-left">
-                        <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">side pocketが、<br>すべて解決します</h2>
-                        <p class="mt-4 text-lg text-gray-600">あなたの時間管理をシンプルにする、直感的でパワフルな機能。</p>
-                    </div>
-                     <div class="scroll-animation fade-in-right">
-                        <img src="https://raw.githubusercontent.com/Mutuuuuuu/sidepocket/main/public/images/nakama2.png" alt="チームでの利用イメージ" class="w-full h-auto max-w-sm mx-auto">
-                    </div>
+        <section id="features" class="relative py-16 sm:py-24 bg-gray-50 overflow-hidden">
+             <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div class="text-center max-w-3xl mx-auto">
+                    <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight scroll-animation fade-in-up">side pocketが、すべて解決します</h2>
+                    <p class="mt-4 text-lg text-gray-600 scroll-animation fade-in-up" style="transition-delay: 0.2s;">あなたの時間管理をシンプルにする、直感的でパワフルな機能。</p>
                 </div>
                 
                 <div class="mt-24 grid md:grid-cols-2 gap-16 items-center">
@@ -196,6 +189,9 @@
                         </ul>
                     </div>
                 </div>
+            </div>
+             <div class="absolute top-0 left-0 h-full w-1/3 z-0 hidden md:block">
+                <img src="https://raw.githubusercontent.com/Mutuuuuuu/sidepocket/main/public/images/nakama2.png" class="absolute h-full w-auto object-contain object-left opacity-10 left-0 top-0">
             </div>
         </section>
 
