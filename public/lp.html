@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
     <style>
         body { 
             font-family: 'Noto Sans JP', sans-serif; 
@@ -26,19 +27,14 @@
             opacity: 1;
             transform: translate(0, 0);
         }
-        .feature-icon {
-            width: 2.5rem; /* 40px */
-            height: 2.5rem; /* 40px */
-            padding: 0.5rem; /* 8px */
-            border-radius: 0.75rem; /* 12px */
-            color: #ffffff;
-        }
         .faq-answer {
-            display: none;
-            padding-left: 2.5rem; /* Qアイコンとのインデント調整 */
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
         }
-        .faq-item.active .faq-answer {
-            display: block;
+        /* Swiper.jsのページネーションの色を調整 */
+        .swiper-pagination-bullet-active {
+            background-color: #2563eb; /* blue-600 */
         }
     </style>
 </head>
@@ -68,10 +64,10 @@
                 <div class="grid md:grid-cols-2 gap-12 items-center py-16 sm:py-20">
                     <div class="text-center md:text-left scroll-animation fade-in-up">
                         <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight leading-tight">
-                            あなたの「時間」を、大切に。
+                            時間管理を、スマートに。
                         </h1>
                         <p class="mt-6 max-w-xl mx-auto md:mx-0 text-lg text-gray-600" style="transition-delay: 0.2s;">
-                            sidepocketは、フリーランスや副業ワーカーのためのシンプルな時間管理アプリ。面倒な稼働時間管理からあなたを解放し、創造的な仕事に集中する時間を取り戻します。
+                            誰でもカンタンに使える稼働管理アプリ。煩わしい作業を手放し、自分らしい働き方へ。
                         </p>
                         <div class="mt-8 flex flex-col sm:flex-row items-center justify-center md:justify-start space-y-4 sm:space-y-0 sm:space-x-4" style="transition-delay: 0.4s;">
                             <a href="/signup.html" class="inline-block w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105">
@@ -129,65 +125,87 @@
                     <p class="mt-4 text-lg text-gray-600 scroll-animation fade-in-up" style="transition-delay: 0.2s;">あなたの時間管理をシンプルにする、直感的でパワフルな機能。</p>
                 </div>
                 
-                <div class="mt-24 grid md:grid-cols-2 gap-16 items-center">
-                     <div class="mt-10 md:mt-0 transition duration-300 ease-in-out hover:scale-105 hover:shadow-2xl rounded-lg">
-                        <img src="https://raw.githubusercontent.com/Mutuuuuuu/sidepocket/main/public/images/tsimage.png" alt="ワンクリック打刻のイメージ" class="rounded-lg">
-                    </div>
-                    <div>
-                        <div class="flex items-center mb-4">
-                             <div class="feature-icon bg-green-500 flex items-center justify-center mr-4">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                <div class="mt-16 swiper">
+                    <div class="swiper-wrapper pb-12">
+                        <div class="swiper-slide px-4 sm:px-12">
+                            <div class="grid md:grid-cols-2 gap-8 md:gap-16 items-center">
+                                 <div class="mt-10 md:mt-0">
+                                    <img src="https://raw.githubusercontent.com/Mutuuuuuu/sidepocket/main/public/images/tsimage.png" alt="ワンクリック打刻のイメージ" class="rounded-lg shadow-xl">
+                                </div>
+                                <div class="text-center md:text-left">
+                                    <h3 class="text-2xl font-bold text-gray-900">ワンクリックで、正確な時間記録</h3>
+                                    <p class="mt-4 text-lg text-gray-600">「出勤」「退勤」ボタンを押すだけのシンプルな操作で、作業時間を正確に記録。もう手計算や記憶に頼る必要はありません。</p>
+                                </div>
                             </div>
-                            <h3 class="text-2xl font-bold text-gray-900">ワンクリックで、正確な時間記録</h3>
                         </div>
-                        <p class="mt-4 text-lg text-gray-600">「出勤」「退勤」ボタンを押すだけのシンプルな操作で、作業時間を正確に記録。もう手計算や記憶に頼る必要はありません。</p>
-                        <ul class="mt-6 space-y-2 text-gray-600">
-                             <li class="flex items-start"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg><span>プロジェクトごとの自動集計</span></li>
-                             <li class="flex items-start"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg><span>休憩時間もかんたんに記録</span></li>
-                             <li class="flex items-start"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg><span>記録の修正もラクラク</span></li>
-                        </ul>
+                        <div class="swiper-slide px-4 sm:px-12">
+                            <div class="grid md:grid-cols-2 gap-8 md:gap-16 items-center">
+                                 <div class="mt-10 md:mt-0">
+                                    <img src="https://raw.githubusercontent.com/Mutuuuuuu/sidepocket/main/public/images/summaryimage.png" alt="レポートと収支管理のイメージ" class="rounded-lg shadow-xl">
+                                </div>
+                                <div class="text-center md:text-left">
+                                    <h3 class="text-2xl font-bold text-gray-900">充実のレポート機能</h3>
+                                    <p class="mt-4 text-lg text-gray-600">プロジェクト(案件)ごとに稼働実績や収支のレポートをひと目で把握できます。また、エクスポート機能で、稼働実績報告書の作成や会計システムへの連携も可能です。</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="swiper-slide px-4 sm:px-12">
+                             <div class="grid md:grid-cols-2 gap-8 md:gap-16 items-center">
+                                 <div class="mt-10 md:mt-0">
+                                    <img src="https://raw.githubusercontent.com/Mutuuuuuu/sidepocket/main/public/images/calimage.png" alt="Googleカレンダー連携のイメージ" class="rounded-lg shadow-xl">
+                                </div>
+                                <div class="text-center md:text-left">
+                                    <h3 class="text-2xl font-bold text-gray-900">Googleカレンダー連携</h3>
+                                    <p class="mt-4 text-lg text-gray-600">普段お使いのGoogleカレンダーの予定を、ワンクリックで稼働実績として取り込み。予定と実績の二重管理から解放されます。</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                    <div class="swiper-pagination"></div>
                 </div>
 
-                <div class="mt-24 grid md:grid-cols-2 gap-16 items-center">
-                    <div class="order-1 md:order-2 transition duration-300 ease-in-out hover:scale-105 hover:shadow-2xl rounded-lg">
-                         <img src="https://raw.githubusercontent.com/Mutuuuuuu/sidepocket/main/public/images/summaryimage.png" alt="レポートと収支管理のイメージ" class="rounded-lg">
-                    </div>
-                    <div class="order-2 md:order-1">
-                        <div class="flex items-center mb-4">
-                             <div class="feature-icon bg-purple-500 flex items-center justify-center mr-4">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" /></svg>
-                            </div>
-                            <h3 class="text-2xl font-bold text-gray-900">充実のレポート機能</h3>
+                <div class="mt-24 text-center">
+                    <h3 class="text-2xl font-bold text-gray-900 tracking-tight scroll-animation fade-in-up">機能一覧</h3>
+                </div>
+                <div class="mt-12 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 text-center">
+                    <div class="scroll-animation fade-in-up" style="transition-delay: 0.1s;">
+                        <div class="flex items-center justify-center h-16 w-16 bg-white rounded-full shadow-md mx-auto">
+                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-blue-600"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         </div>
-                        <p class="mt-4 text-lg text-gray-600">プロジェクト(案件)ごとに稼働実績や収支のレポートをひと目で把握できます。また、エクスポート機能で、稼働実績報告書の作成や会計システムへの連携も可能です。</p>
-                         <ul class="mt-6 space-y-2 text-gray-600">
-                            <li class="flex items-start"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg><span>時給・月給など柔軟な単価設定</span></li>
-                            <li class="flex items-start"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg><span>グラフで直感的に収支を把握</span></li>
-                            <li class="flex items-start"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg><span>CSV・PDFでのエクスポート機能</span></li>
-                        </ul>
+                        <h3 class="mt-4 font-bold text-gray-800">打刻</h3>
+                    </div>
+                    <div class="scroll-animation fade-in-up" style="transition-delay: 0.2s;">
+                        <div class="flex items-center justify-center h-16 w-16 bg-white rounded-full shadow-md mx-auto">
+                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-blue-600"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" /></svg>
+                        </div>
+                        <h3 class="mt-4 font-bold text-gray-800">プロジェクト管理</h3>
+                    </div>
+                     <div class="scroll-animation fade-in-up" style="transition-delay: 0.3s;">
+                        <div class="flex items-center justify-center h-16 w-16 bg-white rounded-full shadow-md mx-auto">
+                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-blue-600"><path stroke-linecap="round" stroke-linejoin="round" d="m9 7.5 3 4.5m0 0 3-4.5M12 12v5.25M15 12H9m6 3H9m12-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                        </div>
+                        <h3 class="mt-4 font-bold text-gray-800">収益管理</h3>
+                    </div>
+                    <div class="scroll-animation fade-in-up" style="transition-delay: 0.4s;">
+                        <div class="flex items-center justify-center h-16 w-16 bg-white rounded-full shadow-md mx-auto">
+                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-blue-600"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
+                        </div>
+                        <h3 class="mt-4 font-bold text-gray-800">稼働管理</h3>
+                    </div>
+                    <div class="scroll-animation fade-in-up" style="transition-delay: 0.5s;">
+                        <div class="flex items-center justify-center h-16 w-16 bg-white rounded-full shadow-md mx-auto">
+                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-blue-600"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                        </div>
+                        <h3 class="mt-4 font-bold text-gray-800">レポート出力</h3>
+                    </div>
+                    <div class="scroll-animation fade-in-up" style="transition-delay: 0.6s;">
+                        <div class="flex items-center justify-center h-16 w-16 bg-white rounded-full shadow-md mx-auto">
+                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-blue-600"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0h18M12 12.75h.008v.008H12v-.008z" /></svg>
+                        </div>
+                        <h3 class="mt-4 font-bold text-gray-800">Googleカレンダー連携</h3>
                     </div>
                 </div>
-
-                 <div class="mt-24 grid md:grid-cols-2 gap-16 items-center">
-                     <div class="mt-10 md:mt-0 transition duration-300 ease-in-out hover:scale-105 hover:shadow-2xl rounded-lg">
-                        <img src="https://raw.githubusercontent.com/Mutuuuuuu/sidepocket/main/public/images/calimage.png" alt="Googleカレンダー連携のイメージ" class="rounded-lg">
-                    </div>
-                    <div>
-                        <div class="flex items-center mb-4">
-                             <div class="feature-icon bg-yellow-500 flex items-center justify-center mr-4">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0h18M12 12.75h.008v.008H12v-.008Z" /></svg>
-                            </div>
-                            <h3 class="text-2xl font-bold text-gray-900">Googleカレンダー連携</h3>
-                        </div>
-                        <p class="mt-4 text-lg text-gray-600">普段お使いのGoogleカレンダーの予定を、ワンクリックで稼働実績として取り込み。予定と実績の二重管理から解放されます。</p>
-                        <ul class="mt-6 space-y-2 text-gray-600">
-                            <li class="flex items-start"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg><span>実績の登録漏れを防止</span></li>
-                            <li class="flex items-start"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg><span>カレンダーベースで一日を振り返り</span></li>
-                        </ul>
-                    </div>
                 </div>
-            </div>
         </section>
 
         <section class="py-16 sm:py-24 bg-white overflow-hidden">
@@ -199,129 +217,95 @@
                     </p>
                 </div>
                 
-                <div class="mt-12 grid gap-8 md:grid-cols-2 max-w-4xl mx-auto">
-                    <div class="border border-gray-200 rounded-2xl shadow-lg p-8 flex flex-col scroll-animation fade-in-up" style="transition-delay: 0.2s;">
-                        <h3 class="text-2xl font-bold text-gray-900">Free</h3>
-                        <p class="mt-2 text-gray-600">まずは無料で始めたい方に</p>
-                        <div class="mt-6 flex items-baseline">
-                            <span class="text-5xl font-extrabold tracking-tight">¥0</span>
-                            <span class="ml-1 text-xl font-medium text-gray-500">/月</span>
+                <div class="mt-12 grid gap-8 lg:grid-cols-2 max-w-5xl mx-auto items-start">
+                    <div class="border border-gray-200 rounded-2xl shadow-lg p-8 flex flex-col h-full scroll-animation fade-in-up" style="transition-delay: 0.2s;">
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-900">Free</h3>
+                            <p class="mt-2 text-gray-600 h-12">まずは無料で始めたい方に</p>
+                            <div class="mt-6 flex items-baseline">
+                                <span class="text-5xl font-extrabold tracking-tight">¥0</span>
+                                <span class="ml-1 text-xl font-medium text-gray-500">/月</span>
+                            </div>
+                        </div>
+                        <div class="flex-grow mt-8">
+                            <h4 class="font-semibold text-gray-800">機能一覧</h4>
+                            <ul class="mt-4 space-y-4">
+                                <li class="flex items-start">
+                                    <svg class="w-6 h-6 text-blue-500 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                                    <span>基本的な時間記録・プロジェクト管理</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <svg class="w-6 h-6 text-blue-500 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                                    <div class="flex items-center flex-wrap">
+                                        <span>レポート出力 (CSV/PDF)</span>
+                                        <span class="ml-2 mt-1 sm:mt-0 inline-block bg-orange-200 text-orange-800 text-xs font-semibold px-2 py-0.5 rounded-full">いまだけ！</span>
+                                    </div>
+                                </li>
+                                <li class="flex items-start">
+                                    <svg class="w-6 h-6 text-blue-500 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                                    <div class="flex items-center flex-wrap">
+                                        <span>Googleカレンダー連携</span>
+                                        <span class="ml-2 mt-1 sm:mt-0 inline-block bg-orange-200 text-orange-800 text-xs font-semibold px-2 py-0.5 rounded-full">いまだけ！</span>
+                                    </div>
+                                </li>
+                                <li class="flex items-start">
+                                    <svg class="w-6 h-6 text-blue-500 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                                    <span>データ保管期間 <strong class="font-bold text-gray-800">(6ヶ月)</strong></span>
+                                </li>
+                                <li class="flex items-start text-gray-400">
+                                    <svg class="w-6 h-6 text-gray-300 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    <span>広告の非表示</span>
+                                </li>
+                            </ul>
                         </div>
                         <a href="/signup.html" class="mt-8 block w-full bg-blue-600 hover:bg-blue-700 text-white text-center font-bold py-3 rounded-lg shadow-lg transition-transform transform hover:scale-105">
                             無料でアカウント作成
                         </a>
                     </div>
-                    <div class="border-2 border-blue-500 rounded-2xl shadow-lg p-8 flex flex-col bg-blue-50 relative scroll-animation fade-in-up" style="transition-delay: 0.4s;">
+        
+                    <div class="border-2 border-blue-500 rounded-2xl shadow-lg p-8 flex flex-col h-full bg-blue-50 relative scroll-animation fade-in-up" style="transition-delay: 0.4s;">
                          <div class="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2">
                             <span class="px-3 py-1 text-sm font-semibold tracking-wide text-white bg-blue-500 rounded-full">おすすめ</span>
                         </div>
-                        <h3 class="text-2xl font-bold text-blue-900">Standard</h3>
-                        <p class="mt-2 text-blue-700">本格的に活用したいフリーランス・副業ワーカー向け</p>
-                        <div class="mt-6 flex items-baseline">
-                            <span class="text-5xl font-extrabold tracking-tight">開発中</span>
+                        <div>
+                            <h3 class="text-2xl font-bold text-blue-900">Standard</h3>
+                            <p class="mt-2 text-blue-700 h-12">本格的に活用したいフリーランス・副業ワーカー向け</p>
+                            <div class="mt-6 flex items-baseline">
+                                <span class="text-5xl font-extrabold tracking-tight">開発中</span>
+                            </div>
+                        </div>
+                         <div class="flex-grow mt-8">
+                            <h4 class="font-semibold text-gray-800">機能一覧</h4>
+                            <ul class="mt-4 space-y-4">
+                                <li class="flex items-start">
+                                    <svg class="w-6 h-6 text-blue-500 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                                    <span>基本的な時間記録・プロジェクト管理</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <svg class="w-6 h-6 text-blue-500 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                                    <span>レポート出力 (CSV/PDF)</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <svg class="w-6 h-6 text-blue-500 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                                    <span>Googleカレンダー連携</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <svg class="w-6 h-6 text-blue-500 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                                    <span>データ保管期間 <strong class="font-bold text-blue-800">(制限なし)</strong></span>
+                                </li>
+                                <li class="flex items-start">
+                                    <svg class="w-6 h-6 text-blue-500 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                                    <span>広告の非表示</span>
+                                </li>
+                            </ul>
                         </div>
                         <button disabled class="mt-8 block w-full bg-gray-400 text-white text-center font-bold py-3 rounded-lg cursor-not-allowed">
                             準備中
                         </button>
                     </div>
                 </div>
-
-                <div class="mt-16 max-w-4xl mx-auto scroll-animation fade-in-up" style="transition-delay: 0.6s;">
-                    <h3 class="text-xl font-bold text-center mb-8">機能比較</h3>
-                    <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-                        <table class="w-full text-sm table-fixed">
-                            <thead>
-                                <tr class="border-b border-gray-200">
-                                    <th class="py-4 px-4 text-left font-bold w-1/2 border-r border-gray-200">機能</th>
-                                    <th class="py-4 px-4 text-center font-bold bg-gray-100 w-1/4 border-r border-gray-200">Free</th>
-                                    <th class="py-4 px-4 text-center font-bold bg-blue-50 text-blue-900 w-1/4">Standard</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200">
-                                <tr>
-                                    <td class="py-4 px-4 font-medium border-r border-gray-200">基本的な時間記録・プロジェクト管理</td>
-                                    <td class="py-4 px-4 text-center border-r border-gray-200"><span class="text-green-500 font-bold text-lg">✓</span></td>
-                                    <td class="py-4 px-4 text-center"><span class="text-green-500 font-bold text-lg">✓</span></td>
-                                </tr>
-                                <tr>
-                                    <td class="py-4 px-4 font-medium border-r border-gray-200">広告表示</td>
-                                    <td class="py-4 px-4 text-center border-r border-gray-200">あり</td>
-                                    <td class="py-4 px-4 text-center">なし</td>
-                                </tr>
-                                <tr>
-                                    <td class="py-4 px-4 font-medium border-r border-gray-200">レポート出力</td>
-                                    <td class="py-4 px-4 text-center border-r border-gray-200">
-                                        <span class="text-green-500 font-bold text-lg">✓</span>
-                                        <span class="block text-xs text-gray-500">(β版のみ)</span>
-                                    </td>
-                                    <td class="py-4 px-4 text-center"><span class="text-green-500 font-bold text-lg">✓</span></td>
-                                </tr>
-                                <tr>
-                                    <td class="py-4 px-4 font-medium border-r border-gray-200">Googleカレンダー連携</td>
-                                    <td class="py-4 px-4 text-center border-r border-gray-200">
-                                        <span class="text-green-500 font-bold text-lg">✓</span>
-                                        <span class="block text-xs text-gray-500">(β版のみ)</span>
-                                    </td>
-                                    <td class="py-4 px-4 text-center"><span class="text-green-500 font-bold text-lg">✓</span></td>
-                                </tr>
-                                <tr>
-                                    <td class="py-4 px-4 font-medium border-r border-gray-200">時間記録データ保管期間</td>
-                                    <td class="py-4 px-4 text-center border-r border-gray-200">6ヶ月</td>
-                                    <td class="py-4 px-4 text-center">制限なし</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <p class="mt-4 text-xs text-gray-500 text-center">
-                        ※今後の機能拡張で別途差分が発生する場合があります。
-                    </p>
-                </div>
             </div>
         </section>
-
-        <section class="py-16 sm:py-24 bg-gray-50">
-            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center max-w-3xl mx-auto">
-                    <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight scroll-animation fade-in-up">よくあるご質問</h2>
-                </div>
-                <div class="mt-12 max-w-3xl mx-auto divide-y divide-gray-200">
-                    <div class="py-6 scroll-animation fade-in-up" style="transition-delay: 0.2s;">
-                        <div class="faq-item">
-                            <button class="faq-question w-full text-left flex justify-between items-center text-gray-800">
-                                <span class="text-lg font-semibold">本当に無料で利用できますか？</span>
-                                <svg class="faq-arrow w-6 h-6 transform transition-transform" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
-                            </button>
-                            <div class="faq-answer mt-4 text-gray-600">
-                                <p>はい、現在はβ版として提供しており、すべての機能を無料でご利用いただけます。将来的に有料プランの提供を予定しておりますが、その際は事前にお知らせいたしますのでご安心ください。</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="py-6 scroll-animation fade-in-up" style="transition-delay: 0.4s;">
-                        <div class="faq-item">
-                            <button class="faq-question w-full text-left flex justify-between items-center text-gray-800">
-                                <span class="text-lg font-semibold">打刻を忘れた場合、後から修正できますか？</span>
-                                <svg class="faq-arrow w-6 h-6 transform transition-transform" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
-                            </button>
-                            <div class="faq-answer mt-4 text-gray-600">
-                                <p>はい、可能です。過去の日時に遡って、稼働時間の追加や修正を簡単に行うことができます。</p>
-                            </div>
-                        </div>
-                    </div>
-                     <div class="py-6 scroll-animation fade-in-up" style="transition-delay: 0.6s;">
-                        <div class="faq-item">
-                            <button class="faq-question w-full text-left flex justify-between items-center text-gray-800">
-                                <span class="text-lg font-semibold">データはどのように活用できますか？</span>
-                                <svg class="faq-arrow w-6 h-6 transform transition-transform" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
-                            </button>
-                            <div class="faq-answer mt-4 text-gray-600">
-                                <p>記録したデータは、プロジェクトごとのレポートで可視化できるほか、CSVやPDF形式でエクスポートできます。請求書作成時の稼働報告や、確定申告時の資料としてご活用いただけます。</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
 
         <section class="bg-gradient-to-r from-orange-400 via-pink-500 to-blue-600 overflow-hidden">
             <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
@@ -335,7 +319,77 @@
             </div>
         </section>
 
-    </main>
+        <section class="py-16 sm:py-24 bg-gray-50 overflow-hidden">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight scroll-animation fade-in-up">よくあるご質問</h2>
+                </div>
+                <div class="mt-12 max-w-3xl mx-auto scroll-animation fade-in-up" style="transition-delay: 0.2s;">
+                    <div class="divide-y divide-gray-200">
+                        <div class="faq-item py-4">
+                            <div class="faq-question cursor-pointer flex justify-between items-center w-full text-left">
+                                <span class="text-lg font-semibold text-gray-800">無料で利用できますか？</span>
+                                <svg class="faq-arrow w-6 h-6 text-gray-500 transition-transform transform" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
+                            </div>
+                            <div class="faq-answer pt-4 pr-8">
+                                <p class="text-base text-gray-600">はい。無料でご利用いただけます。現状はβ版のためStandardプランで提供する予定の機能もすべてFreeプランでご利用いただけます。</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item py-4">
+                            <div class="faq-question cursor-pointer flex justify-between items-center w-full text-left">
+                                <span class="text-lg font-semibold text-gray-800">Standardプランはいつから利用できますか？</span>
+                                <svg class="faq-arrow w-6 h-6 text-gray-500 transition-transform transform" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
+                            </div>
+                            <div class="faq-answer pt-4 pr-8">
+                                <p class="text-base text-gray-600">利用可能になりましたらアナウンスさせて頂きます。</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item py-4">
+                            <div class="faq-question cursor-pointer flex justify-between items-center w-full text-left">
+                                <span class="text-lg font-semibold text-gray-800">データはどのように活用できますか？</span>
+                                <svg class="faq-arrow w-6 h-6 text-gray-500 transition-transform transform" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
+                            </div>
+                            <div class="faq-answer pt-4 pr-8">
+                                <p class="text-base text-gray-600">記録したデータは、プロジェクトごとのレポートで可視化できるほか、CSVやPDF形式でエクスポートできます。請求書作成時の稼働報告や、確定申告時の資料としてご活用いただけます。</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item py-4">
+                            <div class="faq-question cursor-pointer flex justify-between items-center w-full text-left">
+                                <span class="text-lg font-semibold text-gray-800">打刻を忘れた場合、後から修正できますか？</span>
+                                <svg class="faq-arrow w-6 h-6 text-gray-500 transition-transform transform" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
+                            </div>
+                            <div class="faq-answer pt-4 pr-8">
+                                <p class="text-base text-gray-600">はい、可能です。過去の日時に遡って、稼働時間の追加や修正を簡単に行うことができます。</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item py-4">
+                            <div class="faq-question cursor-pointer flex justify-between items-center w-full text-left">
+                                <span class="text-lg font-semibold text-gray-800">チーム(複数人)で利用できますか？</span>
+                                <svg class="faq-arrow w-6 h-6 text-gray-500 transition-transform transform" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
+                            </div>
+                            <div class="faq-answer pt-4 pr-8">
+                                <p class="text-base text-gray-600">いいえ、個人向けのサービスのため現時点でチーム利用を想定しておりません。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        </main>
 
     <footer class="bg-gray-100">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -353,6 +407,7 @@
         </div>
     </footer>
 
+    <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const targets = document.querySelectorAll('.scroll-animation');
@@ -372,27 +427,45 @@
                 observer.observe(target);
             });
 
+            // Swiperの初期化
+            const swiper = new Swiper('.swiper', {
+                loop: true,
+                autoplay: {
+                    delay: 7000,
+                    disableOnInteraction: false,
+                },
+                pagination: {
+                    el: '.swiper-pagination',
+                    clickable: true,
+                },
+            });
+
+            // FAQアコーディオンの処理
             const faqItems = document.querySelectorAll('.faq-item');
             faqItems.forEach(item => {
                 const question = item.querySelector('.faq-question');
                 const answer = item.querySelector('.faq-answer');
                 const arrow = item.querySelector('.faq-arrow');
                 const plusIcon = '<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />';
-                const minusIcon = '<path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4" />';
+                const minusIcon = '<path stroke-linecap="round" stroke-linejoin="round" d="M18 12H6" />';
 
                 question.addEventListener('click', () => {
-                    const isOpen = item.classList.contains('active');
+                    const isOpen = answer.style.maxHeight !== '0px';
                     
+                    // いったんすべてのアコーディオンを閉じる
                     faqItems.forEach(i => {
-                        i.classList.remove('active');
-                        i.querySelector('.faq-answer').style.maxHeight = '0px';
-                        i.querySelector('.faq-arrow').innerHTML = plusIcon;
+                        if (i !== item) {
+                            i.querySelector('.faq-answer').style.maxHeight = '0px';
+                            i.querySelector('.faq-arrow').innerHTML = plusIcon;
+                        }
                     });
 
                     if (!isOpen) {
-                        item.classList.add('active');
                         answer.style.maxHeight = answer.scrollHeight + 'px';
                         arrow.innerHTML = minusIcon;
+                    } else {
+                        answer.style.maxHeight = '0px';
+                        arrow.innerHTML = plusIcon;
                     }
                 });
             });
