@@ -11,61 +11,98 @@
         body { font-family: 'Noto Sans JP', sans-serif; }
         .modal-body { max-height: 70vh; overflow-y: auto; }
         .column-item.active { background-color: #eef2ff; /* indigo-50 */ }
+
+        .columns-container { display: flex; flex-direction: column; width: 100%; gap: 1rem; }
+        @media (min-width: 768px) { .columns-container { flex-direction: row; } }
+        .columns-container > .column { flex: 1; min-width: 0; }
+
+        .column-header { padding: 0.75rem 1rem; background-color: #f3f4f6; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
+        .column-header h2 { font-size: 1rem; font-weight: 600; color: #1f2937; }
+        
+        .close-column-btn { background: none; border: none; font-size: 1.5rem; font-weight: bold; line-height: 1; color: #9ca3af; cursor: pointer; padding: 0.25rem; }
+        .close-column-btn:hover { color: #1f2937; }
+
+        /* ▼▼▼ UI改善用の専用スタイル ▼▼▼ */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+        }
+        .section-header h3 {
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 600; /* font-semibold */
+            color: #4b5563; /* text-gray-600 */
+        }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: max-content 1fr; /* ラベル幅は自動、値は残り全部 */
+            gap: 0.5rem 1rem; /* 縦横の隙間 */
+            padding: 1rem;
+        }
+        .detail-grid dt { /* dt = ラベル */
+            font-weight: 600;
+            color: #6b7280;
+        }
+        .detail-grid dd { /* dd = 値 */
+            color: #1f2937;
+            word-break: break-all;
+        }
+        .action-btn {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+        .action-btn.edit {
+            color: #4f46e5;
+            background-color: #eef2ff;
+        }
+        .action-btn.edit:hover {
+            background-color: #e0e7ff;
+        }
+        .action-btn.delete {
+            color: #dc2626;
+            background-color: #fee2e2;
+            margin-left: 0.5rem;
+        }
+        .action-btn.delete:hover {
+            background-color: #fecaca;
+        }
+        .action-btn.add {
+            color: #166534;
+            background-color: #dcfce7;
+        }
+        .action-btn.add:hover {
+            background-color: #bbf7d0;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
-    <div id="loading-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center z-50">
-        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
-    </div>
-
+    <div id="loading-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center z-50"><div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div></div>
     <div id="app-container" class="relative min-h-screen md:flex opacity-0">
         <div id="header-placeholder"></div>
         <div id="content-container" class="relative md:ml-20 transition-all duration-300 ease-in-out flex-1 flex flex-col">
-            <header class="flex items-center p-4 bg-white border-b sticky top-0 z-20 h-20">
-                <div class="flex-1 md:hidden">
-                    <button id="mobile-menu-button" class="text-gray-500 hover:text-gray-600 focus:outline-none">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                    </button>
-                </div>
-                <div class="flex-1 flex justify-center"><div class="hidden md:flex"><img src="images/sidepocket_Logo.png" alt="Sidepocket Logo" class="h-10"></div></div>
-                <div class="flex-1 flex justify-end items-center gap-4">
-                    <div class="flex items-center gap-2">
-                        <span id="header-display-name" class="text-gray-700 hidden sm:inline">Guest</span>
-                        <a href="/profile.html"><img id="header-user-icon" class="h-10 w-10 rounded-full object-cover" src="images/sidepocket_symbol.png" alt="User icon"></a>
-                    </div>
-                </div>
-            </header>
-
+            <header class="flex items-center p-4 bg-white border-b sticky top-0 z-20 h-20"><div class="flex-1 md:hidden"><button id="mobile-menu-button" class="text-gray-500 hover:text-gray-600 focus:outline-none"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div><div class="flex-1 flex justify-center"><div class="hidden md:flex"><img src="images/sidepocket_Logo.png" alt="Sidepocket Logo" class="h-10"></div></div><div class="flex-1 flex justify-end items-center gap-4"><div class="flex items-center gap-2"><span id="header-display-name" class="text-gray-700 hidden sm:inline">Guest</span><a href="/profile.html"><img id="header-user-icon" class="h-10 w-10 rounded-full object-cover" src="images/sidepocket_symbol.png" alt="User icon"></a></div></div></header>
             <main class="flex-1 flex flex-col p-6 md:p-8">
-                <div class="flex flex-wrap gap-4 justify-between items-center mb-6">
-                    <h1 class="text-3xl font-bold text-gray-800">取引先管理</h1>
-                    <div class="flex gap-2">
-                        <button id="open-import-modal-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors text-sm">インポート</button>
-                        <button id="open-export-modal-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors text-sm">エクスポート</button>
-                        <button id="open-add-client-modal" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors text-sm">取引先を新規登録</button>
-                    </div>
-                </div>
-                <div id="status-message-container"></div>
-                
-                <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div id="clients-column" class="bg-white rounded-xl shadow-md flex flex-col">
-                        <div class="p-4 border-b">
-                            <h2 class="font-bold text-lg">取引先</h2>
-                        </div>
-                        <div id="clients-list" class="flex-1 overflow-y-auto">
-                            </div>
-                    </div>
-
-                    <div id="contacts-column" class="bg-white rounded-xl shadow-md flex-col hidden md:flex">
-                        </div>
-
-                    <div id="contact-details-column" class="bg-white rounded-xl shadow-md flex-col hidden md:flex">
-                        </div>
+                <div class="flex flex-wrap gap-4 justify-between items-center mb-6"><h1 class="text-3xl font-bold text-gray-800">取引先管理</h1><div class="flex gap-2"><button id="open-import-modal-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors text-sm">インポート</button><button id="open-export-modal-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors text-sm">エクスポート</button><button id="open-add-client-modal" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors text-sm">取引先を新規登録</button></div></div>
+                <div id="status-message-container" class="fixed top-24 right-8 z-50"></div>
+                <div class="flex-1 flex columns-container">
+                    <div id="clients-column" class="column bg-white rounded-xl shadow-md flex flex-col"></div>
+                    <div id="contacts-column" class="column bg-white rounded-xl shadow-md hidden flex-col"></div>
+                    <div id="contact-details-column" class="column bg-white rounded-xl shadow-md hidden flex-col"></div>
                 </div>
             </main>
+            <div id="client-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center items-center z-40 p-4"><div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg"><div class="flex justify-between items-center mb-4"><h3 id="client-modal-title" class="text-xl font-bold"></h3><button class="modal-close-btn text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button></div><form id="client-form"><input type="hidden" id="client-id"><div class="modal-body space-y-4"><div><label for="client-name" class="block text-sm font-medium text-gray-700">取引先名 (必須)</label><input type="text" id="client-name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required></div><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label for="client-name-kana" class="block text-sm font-medium text-gray-700">取引先名 (カナ)</label><input type="text" id="client-name-kana" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></div><div><label for="client-name-en" class="block text-sm font-medium text-gray-700">取引先名 (英名)</label><input type="text" id="client-name-en" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></div></div><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label for="client-corporate-number" class="block text-sm font-medium text-gray-700">法人番号</label><input type="text" id="client-corporate-number" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></div><div><label for="client-invoice-number" class="block text-sm font-medium text-gray-700">適格請求書発行事業者登録番号</label><input type="text" id="client-invoice-number" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></div></div><div><label for="client-url" class="block text-sm font-medium text-gray-700">会社URL</label><input type="url" id="client-url" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></div><div><label for="client-address" class="block text-sm font-medium text-gray-700">住所</label><input type="text" id="client-address" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></div><div><label for="client-memo" class="block text-sm font-medium text-gray-700">メモ</label><textarea id="client-memo" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></textarea></div></div><div class="mt-6"><button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">保存</button></div></form></div></div>
+            <div id="contact-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center items-center z-40 p-4"><div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg"><div class="flex justify-between items-center mb-4"><h3 id="contact-modal-title" class="text-xl font-bold"></h3><button class="modal-close-btn text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button></div><form id="contact-form"><input type="hidden" id="contact-id"><input type="hidden" id="contact-client-id"><div class="modal-body space-y-4"><div><label for="contact-name" class="block text-sm font-medium text-gray-700">担当者名 (必須)</label><input type="text" id="contact-name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required></div><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label for="contact-name-kana" class="block text-sm font-medium text-gray-700">担当者名 (カナ)</label><input type="text" id="contact-name-kana" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></div><div><label for="contact-name-en" class="block text-sm font-medium text-gray-700">担当者名 (英名)</label><input type="text" id="contact-name-en" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></div></div><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label for="contact-email" class="block text-sm font-medium text-gray-700">メールアドレス</label><input type="email" id="contact-email" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></div><div><label for="contact-phone" class="block text-sm font-medium text-gray-700">電話番号</label><input type="tel" id="contact-phone" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></div></div><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label for="contact-department" class="block text-sm font-medium text-gray-700">部署</label><input type="text" id="contact-department" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></div><div><label for="contact-title" class="block text-sm font-medium text-gray-700">役職</label><input type="text" id="contact-title" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></div></div><div><label for="contact-memo" class="block text-sm font-medium text-gray-700">メモ</label><textarea id="contact-memo" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></textarea></div></div><div class="mt-6"><button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">保存</button></div></form></div></div>
+            <div id="export-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center items-center z-40 p-4"><div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold">CSVエクスポート</h3><button class="modal-close-btn text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button></div><div class="space-y-4"><p>エクスポートするデータの形式を選択してください。</p><div><select id="export-type-select" class="w-full p-2 border rounded-md bg-white"><option value="clients">取引先のみ</option><option value="clients_and_contacts">取引先＋担当者</option></select></div><button id="export-execute-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">エクスポート実行</button></div></div>
+            <div id="import-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center items-center z-40 p-4"><div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold">CSVインポート</h3><button class="modal-close-btn text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button></div><div class="space-y-4"><p>CSVファイルをアップロードして取引先と担当者を一括登録します。</p><div class="p-3 bg-blue-50 border border-blue-200 rounded-md"><a href="#" id="download-template-btn" class="text-blue-600 font-semibold hover:underline">インポート用のテンプレート(CSV)をダウンロード</a></div><div><label for="csv-file-input" class="block text-sm font-medium text-gray-700 mb-1">CSVファイルを選択</label><input type="file" id="csv-file-input" accept=".csv" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"></div><button id="import-execute-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-400" disabled>インポート実行</button></div></div>
         </div>
     </div>
-    
     <script type="module" src="js/main.js"></script>
 </body>
 </html>
