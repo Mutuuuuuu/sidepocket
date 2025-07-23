@@ -1,7 +1,7 @@
 import { getFirebaseServices } from './firebaseService.js';
-import { 
-    doc, getDoc, setDoc, serverTimestamp, collection, addDoc, 
-    query, where, orderBy, limit, onSnapshot, writeBatch, 
+import {
+    doc, getDoc, setDoc, serverTimestamp, collection, addDoc,
+    query, where, orderBy, limit, onSnapshot, writeBatch,
     getDocs, deleteDoc, Timestamp, updateDoc
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
@@ -29,7 +29,7 @@ export const uploadUserIcon = async (uid, file) => {
 };
 export const getUserDetails = async (uid) => {
     const userProfile = await getUserProfile(uid);
-    
+
     const projectsQuery = query(collection(db(), 'users', uid, 'projects'), orderBy('createdAt', 'desc'));
     const projectsSnapshot = await getDocs(projectsQuery);
     const projects = projectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -37,7 +37,7 @@ export const getUserDetails = async (uid) => {
     const timestampsQuery = query(collection(db(), 'users', uid, 'timestamps'), orderBy('clockInTime', 'desc'), limit(10));
     const timestampsSnapshot = await getDocs(timestampsQuery);
     const timestamps = timestampsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
+
     return { profile: userProfile, projects, timestamps };
 };
 
@@ -162,7 +162,7 @@ export const updateNotification = (id, data) => {
 };
 export const getNotifications = (callback) => {
     const today = new Date().toISOString().split('T')[0];
-    const q = query(collection(db(), 'notifications'), 
+    const q = query(collection(db(), 'notifications'),
         where('startDate', '<=', today),
         orderBy('startDate', 'desc'),
         orderBy('createdAt', 'desc')
@@ -216,6 +216,20 @@ export const getClientsAndContacts = (uid, callback) => {
         });
     });
 };
+
+/**
+ * 有効な取引先リストを取得する（プロジェクト管理画面のドロップダウン用）
+ * @param {string} uid ユーザーID
+ * @returns {Promise<Array>} 有効な取引先の配列を返すPromise
+ */
+export const getActiveClients = async (uid) => {
+    const clientsRef = collection(db(), `users/${uid}/clients`);
+    // Firestoreのクエリでは、isActiveフィールドがtrueのものを対象とします。
+    const q = query(clientsRef, where("isActive", "==", true), orderBy("name"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
 
 // ★★★★★ ここからが追記されたCSVインポート用の関数です ★★★★★
 // === Batch Operations for CSV Import ===

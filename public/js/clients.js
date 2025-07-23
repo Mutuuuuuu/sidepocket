@@ -16,12 +16,12 @@ let selectedClientId = null;
 let selectedContactId = null;
 
 const dom = {};
-const clientFormFields = ['id', 'name', 'name-kana', 'name-en', 'corporate-number', 'invoice-number', 'url', 'address', 'memo'];
+const clientFormFields = ['id', 'is-active', 'name', 'name-kana', 'name-en', 'corporate-number', 'invoice-number', 'url', 'address', 'memo'];
 const contactFormFields = ['id', 'client-id', 'name', 'name-kana', 'name-en', 'email', 'phone', 'department', 'title', 'memo'];
 
 // --- Helper Functions ---
 const toCamelCase = (s) => s.replace(/-(\w)/g, (_, p1) => p1.toUpperCase());
-const cacheDOMElements = () => { const mainIds = [ 'clients-column', 'contacts-column', 'contact-details-column', 'client-modal', 'contact-modal', 'client-form', 'contact-form', 'client-modal-title', 'contact-modal-title', 'open-add-client-modal', 'import-modal', 'open-import-modal-btn', 'csv-file-input', 'import-execute-btn', 'download-template-btn', 'export-modal', 'open-export-modal-btn', 'export-execute-btn', 'export-type-select', 'loading-overlay', 'status-message-container' ]; mainIds.forEach(id => dom[toCamelCase(id)] = document.getElementById(id)); clientFormFields.forEach(field => dom[toCamelCase(`client-${field}`)] = document.getElementById(`client-${field}`)); contactFormFields.forEach(field => dom[toCamelCase(`contact-${field}`)] = document.getElementById(`contact-${field}`)); };
+const cacheDOMElements = () => { const mainIds = [ 'clients-column', 'contacts-column', 'contact-details-column', 'client-modal', 'contact-modal', 'client-form', 'contact-form', 'client-modal-title', 'contact-modal-title', 'open-add-client-modal', 'import-modal', 'open-import-modal-btn', 'csv-file-input', 'import-execute-btn', 'download-template-btn', 'export-modal', 'open-export-modal-btn', 'export-execute-btn', 'export-type-select', 'loading-overlay', 'status-message-container', 'is-active-label' ]; mainIds.forEach(id => dom[toCamelCase(id)] = document.getElementById(id)); clientFormFields.forEach(field => dom[toCamelCase(`client-${field}`)] = document.getElementById(`client-${field}`)); contactFormFields.forEach(field => dom[toCamelCase(`contact-${field}`)] = document.getElementById(`contact-${field}`)); };
 
 // --- Self-contained UI Functions ---
 const toggleLoading = (isLoading) => dom.loadingOverlay?.classList.toggle('hidden', !isLoading);
@@ -32,7 +32,27 @@ const closeModal = (modalId) => document.getElementById(modalId)?.classList.add(
 const setupModalClosers = () => { document.querySelectorAll('#client-modal, #contact-modal, #import-modal, #export-modal').forEach(modal => { modal.querySelector('.modal-close-btn')?.addEventListener('click', () => closeModal(modal.id)); modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(modal.id); }); }); };
 
 // --- Modal Openers ---
-const openClientModal = (client = null) => { dom.clientForm.reset(); if (client) { dom.clientModalTitle.textContent = '取引先を編集'; clientFormFields.forEach(f => { const key = toCamelCase(`client-${f}`); if (dom[key] && client[toCamelCase(f)] !== undefined) dom[key].value = client[toCamelCase(f)] || ''; }); } else { dom.clientModalTitle.textContent = '取引先を新規登録'; dom.clientId.value = ''; } openModal('client-modal'); };
+const updateIsActiveLabel = () => { if(dom.isActiveLabel) dom.isActiveLabel.textContent = dom.clientIsActive.checked ? '有効' : '無効'; };
+const openClientModal = (client = null) => {
+    dom.clientForm.reset(); 
+    if (client) {
+        dom.clientModalTitle.textContent = '取引先を編集'; 
+        clientFormFields.forEach(f => {
+            const key = toCamelCase(`client-${f}`);
+            if (f === 'is-active') {
+                dom.clientIsActive.checked = client.isActive === true;
+            } else if (dom[key] && client[toCamelCase(f)] !== undefined) {
+                dom[key].value = client[toCamelCase(f)] || '';
+            }
+        });
+    } else {
+        dom.clientModalTitle.textContent = '取引先を新規登録';
+        dom.clientId.value = '';
+        dom.clientIsActive.checked = true; // 新規作成時はデフォルトで有効
+    }
+    updateIsActiveLabel();
+    openModal('client-modal'); 
+};
 const openContactModal = (clientId, contact = null) => { dom.contactForm.reset(); dom.contactClientId.value = clientId; if (contact) { dom.contactModalTitle.textContent = '担当者を編集'; contactFormFields.forEach(f => { const key = toCamelCase(`contact-${f}`); if (dom[key] && contact[toCamelCase(f)] !== undefined) dom[key].value = contact[toCamelCase(f)] || ''; }); } else { dom.contactModalTitle.textContent = '担当者を新規登録'; dom.contactId.value = ''; } openModal('contact-modal'); };
 
 // --- Delete Handlers ---
@@ -66,7 +86,39 @@ const handleColumnClick = (e) => {
 };
 
 // --- Form Submit Handlers ---
-async function handleFormSubmit(e, formType) { e.preventDefault(); toggleLoading(true); const isClient = formType === 'client'; const formFields = isClient ? clientFormFields : contactFormFields; const data = {}; formFields.slice(isClient ? 1 : 2).forEach(f => data[toCamelCase(f)] = dom[toCamelCase(`${formType}-${f}`)]?.value.trim() || null); const id = dom[toCamelCase(`${formType}-id`)]?.value; const clientId = isClient ? id : dom.contactClientId.value; const modalId = `${formType}-modal`; try { if (isClient) { if (id) await updateClient(currentUser.uid, id, data); else await addClient(currentUser.uid, data); } else { if (id) await updateContact(currentUser.uid, id, data); else await addContact(currentUser.uid, clientId, data); } showStatus(`${isClient ? '取引先' : '担当者'}情報を${id ? '更新' : '登録'}しました。`); closeModal(modalId); } catch (error) { showStatus(`エラー: ${error.message}`, true); } finally { toggleLoading(false); } }
+async function handleFormSubmit(e, formType) { 
+    e.preventDefault(); 
+    toggleLoading(true); 
+    const isClient = formType === 'client'; 
+    const formFields = isClient ? clientFormFields : contactFormFields; 
+    const data = {};
+    
+    if (isClient) {
+        formFields.slice(2).forEach(f => data[toCamelCase(f)] = dom[toCamelCase(`client-${f}`)]?.value.trim() || null);
+        data.isActive = dom.clientIsActive.checked;
+    } else {
+        formFields.slice(2).forEach(f => data[toCamelCase(f)] = dom[toCamelCase(`contact-${f}`)]?.value.trim() || null);
+    }
+    
+    const id = dom[toCamelCase(`${formType}-id`)]?.value; 
+    const clientId = isClient ? id : dom.contactClientId.value; 
+    const modalId = `${formType}-modal`; 
+    try { 
+        if (isClient) { 
+            if (id) await updateClient(currentUser.uid, id, data); 
+            else await addClient(currentUser.uid, data); 
+        } else { 
+            if (id) await updateContact(currentUser.uid, id, data); 
+            else await addContact(currentUser.uid, clientId, data); 
+        } 
+        showStatus(`${isClient ? '取引先' : '担当者'}情報を${id ? '更新' : '登録'}しました。`); 
+        closeModal(modalId); 
+    } catch (error) { 
+        showStatus(`エラー: ${error.message}`, true); 
+    } finally { 
+        toggleLoading(false); 
+    } 
+}
 
 // --- Rendering Logic ---
 const renderAllColumns = () => {
@@ -80,7 +132,12 @@ const renderClientsColumn = () => {
     const listHtml = clientsData.length === 0 ? '<p class="p-4 text-sm text-gray-500">取引先がありません。</p>' :
         clientsData.map(client => `
             <div class="p-4 border-b cursor-pointer hover:bg-gray-100 column-item ${client.id === selectedClientId ? 'active' : ''}" data-client-id="${client.id}">
-                <p class="font-semibold text-gray-800">${client.name}</p>
+                <div class="flex justify-between items-center">
+                    <p class="font-semibold text-gray-800">${client.name}</p>
+                    <span class="text-xs font-bold px-2 py-0.5 rounded-full ${client.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}">
+                        ${client.isActive ? '有効' : '無効'}
+                    </span>
+                </div>
                 <p class="text-sm text-gray-500">${client.contacts?.length || 0}人の担当者</p>
             </div>`).join('');
     dom.clientsColumn.innerHTML = `<div class="column-header"><h2>取引先</h2></div><div class="flex-1 overflow-y-auto">${listHtml}</div>`;
@@ -173,6 +230,7 @@ const setupEventListeners = () => {
     dom.exportExecuteBtn?.addEventListener('click', handleExport);
     dom.importExecuteBtn?.addEventListener('click', handleImport);
     dom.csvFileInput?.addEventListener('change', () => { dom.importExecuteBtn.disabled = !dom.csvFileInput.files.length; });
+    dom.clientIsActive?.addEventListener('change', updateIsActiveLabel);
     setupModalClosers();
 };
 

@@ -80,7 +80,7 @@
                         <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                             <tr>
                                 <th scope="col" class="px-6 py-3 w-2/5" data-sort-by="name">プロジェクト名 <span class="sort-indicator"></span></th>
-                                <th scope="col" class="px-6 py-3" data-sort-by="code">コード <span class="sort-indicator"></span></th>
+                                <th scope="col" class="px-6 py-3" data-sort-by="client.name">取引先 <span class="sort-indicator"></span></th>
                                 <th scope="col" class="px-6 py-3">ステータス</th>
                                 <th scope="col" class="px-6 py-3 text-right">操作</th>
                             </tr>
@@ -91,11 +91,8 @@
                 </div>
             </main>
             
-            <!-- ▼▼▼ 広告表示エリア ▼▼▼ -->
             <div id="ad-container" class="hidden px-6 md:px-8"></div>
-            <!-- ▲▲▲ ここまで ▲▲▲ -->
-
-        </div>
+            </div>
     </div>
     
     <div id="project-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
@@ -112,6 +109,12 @@
                                 <div>
                                     <label for="project-name" class="block text-sm font-medium text-gray-700">プロジェクト名</label>
                                     <input type="text" id="project-name" name="name" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                                <div>
+                                    <label for="project-client" class="block text-sm font-medium text-gray-700">取引先 (任意)</label>
+                                    <select id="project-client" name="client" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                        <option value="">取引先を選択</option>
+                                    </select>
                                 </div>
                                 <div>
                                     <label for="project-code" class="block text-sm font-medium text-gray-700">プロジェクトコード <span class="text-xs text-gray-500">(変更不可)</span></label>

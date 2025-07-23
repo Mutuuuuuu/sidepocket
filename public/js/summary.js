@@ -144,6 +144,7 @@ const renderAllTables = () => {
     renderSummaryTable(processedData); // 月次集計はフィルターされたデータで計算
 };
 
+// ▼▼▼ この関数を変更 ▼▼▼
 const populateProjectFilter = () => {
     return new Promise(resolve => {
         getProjects(currentUser.uid, 'all', (projects) => {
@@ -151,13 +152,17 @@ const populateProjectFilter = () => {
             if (dom.tableProjectFilter) {
                 dom.tableProjectFilter.innerHTML = '<option value="all">すべてのプロジェクト</option>';
                 projects.forEach(p => {
-                    dom.tableProjectFilter.innerHTML += `<option value="${p.code}">${p.name}</option>`;
+                    // client.name が存在すれば表示に追加する
+                    const clientName = p.client?.name ? `${p.client.name} ` : '';
+                    const optionText = `${p.code} ${clientName}${p.name}`;
+                    dom.tableProjectFilter.innerHTML += `<option value="${p.code}">${optionText}</option>`;
                 });
             }
             resolve();
         });
     });
 };
+// ▲▲▲ ここまで ▲▲▲
 
 const calculateBilledHours = (actualHours, projectSettings) => {
     if (!projectSettings) return actualHours;
@@ -203,7 +208,6 @@ const renderDetailedTable = (processedData) => {
     });
 };
 
-// ▼▼▼ この関数を修正 ▼▼▼
 const renderSummaryTable = (processedData) => {
     if (!dom.monthlySummaryTableBody || !dom.totalDuration || !dom.totalReward) return;
     dom.monthlySummaryTableBody.innerHTML = '';

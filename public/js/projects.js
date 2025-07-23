@@ -1,19 +1,28 @@
-import { getProjects, addProject, updateProject, deleteProject, isProjectInUse, updateProjectNameInTimestamps } from './services/firestoreService.js';
+import {
+    getProjects,
+    addProject,
+    updateProject,
+    deleteProject,
+    isProjectInUse,
+    updateProjectNameInTimestamps,
+    getActiveClients
+} from './services/firestoreService.js';
 import { toggleLoading, showStatus, openModal, closeModal, setupModalClosers, showConfirmModal } from './services/uiService.js';
 
 let currentUser;
 let allProjects = [];
+let allClients = [];
 let originalProjectName = '';
 const domElements = {};
 
 let currentSort = { key: 'createdAt', direction: 'desc' };
 
 const elementIds = [
-    'projects-table-body', 'project-modal', 'project-form', 'modal-title', 'status-filter', 
-    'project-id', 'project-name', 'project-code', 'project-is-active', 'is-active-label', 
-    'contract-type', 'unit-price', 'monthly-fixed-rate', 'billing-cycle', 'calculation-method', 
-    'billing-start-date', 'billing-end-date', 'monthly-base-hours', 'billing-adjustment-type', 
-    'monthly-min-hours', 'monthly-max-hours'
+    'projects-table-body', 'project-modal', 'project-form', 'modal-title', 'status-filter',
+    'project-id', 'project-name', 'project-code', 'project-is-active', 'is-active-label',
+    'contract-type', 'unit-price', 'monthly-fixed-rate', 'billing-cycle', 'calculation-method',
+    'billing-start-date', 'billing-end-date', 'monthly-base-hours', 'billing-adjustment-type',
+    'monthly-min-hours', 'monthly-max-hours', 'project-client'
 ];
 
 const getContractTypeName = (type) => ({ hourly: '時間単価', monthly: '月額固定' }[type] || '未設定');
@@ -39,10 +48,18 @@ const getRateDetails = (project) => {
     return '';
 };
 
-export const initProjectsPage = (user) => {
+export const initProjectsPage = async (user) => {
     currentUser = user;
     elementIds.forEach(id => { domElements[id] = document.getElementById(id); });
     if (!domElements['projects-table-body']) return;
+
+    // 先に取引先リストを取得
+    try {
+        allClients = await getActiveClients(currentUser.uid);
+    } catch (error) {
+        showStatus('取引先リストの読み込みに失敗しました。', true);
+        console.error("Failed to load clients:", error);
+    }
 
     document.getElementById('open-add-project-modal').addEventListener('click', () => openProjectModal());
     document.querySelector('thead').addEventListener('click', handleSortClick);
@@ -50,7 +67,7 @@ export const initProjectsPage = (user) => {
     domElements['projects-table-body'].addEventListener('click', handleTableClick);
     domElements['status-filter'].addEventListener('change', listenForProjects);
     domElements['project-is-active'].addEventListener('change', updateIsActiveLabel);
-    
+
     setupModalClosers('project-modal');
     listenForProjects();
 };
@@ -72,35 +89,48 @@ const renderProjects = () => {
         const key = currentSort.key;
         if (!key) return 0;
         const direction = currentSort.direction === 'asc' ? 1 : -1;
-        const valA = (a[key] || '').toString().toLowerCase();
-        const valB = (b[key] || '').toString().toLowerCase();
+        
+        let valA, valB;
+        if (key.includes('.')) {
+            const keys = key.split('.');
+            valA = (a[keys[0]]?.[keys[1]] || '').toString().toLowerCase();
+            valB = (b[keys[0]]?.[keys[1]] || '').toString().toLowerCase();
+        } else {
+            valA = (a[key] || '').toString().toLowerCase();
+            valB = (b[key] || '').toString().toLowerCase();
+        }
+
         return valA.localeCompare(valB) * direction;
     });
 
     tableBody.innerHTML = '';
     if (sorted.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="4" class="text-center p-8 text-gray-500">対象のプロジェクトがありません。</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="5" class="text-center p-8 text-gray-500">対象のプロジェクトがありません。</td></tr>';
         return;
     }
 
     sorted.forEach(project => {
         const statusClass = project.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
         const statusText = project.isActive ? '有効' : '無効';
+        const clientName = project.client?.name || '未設定';
 
         const mainRow = document.createElement('tr');
-        mainRow.className = 'bg-white border-b hover:bg-gray-50 cursor-pointer clickable-row';
+        mainRow.className = 'bg-white border-b hover:bg-gray-50 clickable-row';
         mainRow.dataset.id = project.id;
         mainRow.innerHTML = `
             <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${project.name}</td>
-            <td class="px-6 py-4 text-gray-600">${project.code}</td>
+            <td class="px-6 py-4 text-gray-600">${clientName}</td>
             <td class="px-6 py-4"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">${statusText}</span></td>
-            <td class="px-6 py-4 text-right"><button class="delete-btn font-medium text-red-600 hover:underline" data-id="${project.id}">削除</button></td>
+            <td class="px-6 py-4 text-right">
+                <button class="edit-project-btn font-medium text-indigo-600 hover:underline" data-id="${project.id}">編集</button>
+                <button class="delete-btn font-medium text-red-600 hover:underline ml-4" data-id="${project.id}">削除</button>
+            </td>
         `;
-        
+
         const detailsRow = document.createElement('tr');
         detailsRow.className = 'project-details hidden bg-gray-50';
         detailsRow.dataset.detailsFor = project.id;
-        detailsRow.innerHTML = `<td colspan="4" class="p-6 border-b">
+        detailsRow.innerHTML = `<td colspan="5" class="p-6 border-b">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
                 <div>
                     <h4 class="font-bold text-gray-800 mb-2">契約・報酬設定</h4>
@@ -109,6 +139,7 @@ const renderProjects = () => {
                 <div>
                     <h4 class="font-bold text-gray-800 mb-2">契約・清算ルール</h4>
                     <dl class="grid grid-cols-2 gap-y-1">
+                        <dt class="font-medium text-gray-500">取引先</dt><dd class="text-gray-900">${clientName}</dd>
                         <dt class="font-medium text-gray-500">契約開始日</dt><dd class="text-gray-900">${project.billingStartDate || '未設定'}</dd>
                         <dt class="font-medium text-gray-500">契約終了日</dt><dd class="text-gray-900">${project.billingEndDate || '未設定'}</dd>
                         <dt class="font-medium text-gray-500">稼働単位</dt><dd class="text-gray-900">${project.billingCycle} 分</dd>
@@ -116,9 +147,8 @@ const renderProjects = () => {
                     </dl>
                 </div>
             </div>
-            <div class="text-right mt-6"><button class="edit-project-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md" data-id="${project.id}">プロジェクトを編集</button></div>
         </td>`;
-            
+
         tableBody.appendChild(mainRow);
         tableBody.appendChild(detailsRow);
     });
@@ -154,6 +184,14 @@ const openProjectModal = (project = null) => {
     const form = domElements['project-form'];
     form.reset();
     domElements['project-code'].disabled = false;
+
+    // 取引先ドロップダウンを生成
+    const clientSelect = domElements['project-client'];
+    clientSelect.innerHTML = '<option value="">取引先を選択しない</option>';
+    allClients.forEach(c => {
+        clientSelect.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+    });
+
     if (project) {
         domElements['modal-title'].textContent = 'プロジェクトを編集';
         originalProjectName = project.name;
@@ -172,6 +210,12 @@ const openProjectModal = (project = null) => {
         form.monthlyMaxHours.value = project.monthlyMaxHours || '';
         form.billingCycle.value = project.billingCycle || '1';
         form.calculationMethod.value = project.calculationMethod || 'floor';
+        
+        // 紐付いている取引先を選択状態にする
+        if (project.client && project.client.id) {
+            clientSelect.value = project.client.id;
+        }
+
         domElements['project-code'].disabled = true;
     } else {
         domElements['modal-title'].textContent = 'プロジェクトを追加';
@@ -190,6 +234,10 @@ const handleFormSubmit = async (e) => {
     toggleLoading(true);
     const form = domElements['project-form'];
     const projectId = form.id.value;
+
+    const selectedClientId = form.client.value;
+    const selectedClient = allClients.find(c => c.id === selectedClientId);
+
     const projectData = {
         name: form.name.value.trim(), code: form.code.value.trim(), isActive: form.isActive.checked,
         billingStartDate: form.billingStartDate.value || null, billingEndDate: form.billingEndDate.value || null,
@@ -198,6 +246,7 @@ const handleFormSubmit = async (e) => {
         billingAdjustmentType: form.billingAdjustmentType.value, monthlyMinHours: Number(form.monthlyMinHours.value) || 0,
         monthlyMaxHours: Number(form.monthlyMaxHours.value) || 0, billingCycle: Number(form.billingCycle.value) || 1,
         calculationMethod: form.calculationMethod.value,
+        client: selectedClient ? { id: selectedClient.id, name: selectedClient.name } : null
     };
     try {
         if (projectId) {
@@ -222,7 +271,7 @@ const handleFormSubmit = async (e) => {
 };
 
 const handleTableClick = (e) => {
-    const mainRow = e.target.closest('tr.clickable-row');
+    const row = e.target.closest('tr.clickable-row');
     const deleteButton = e.target.closest('button.delete-btn');
     const editButton = e.target.closest('button.edit-project-btn');
 
@@ -238,13 +287,17 @@ const handleTableClick = (e) => {
         if (project) openProjectModal(project);
         return;
     }
-    if (mainRow) {
-        const projectId = mainRow.dataset.id;
-        const detailsRow = document.querySelector(`tr[data-details-for="${projectId}"]`);
+    if (row) {
+        // クリックされた行以外の詳細を閉じる
+        document.querySelectorAll('tr.project-details').forEach(detailsRow => {
+            if (detailsRow.dataset.detailsFor !== row.dataset.id) {
+                detailsRow.classList.add('hidden');
+            }
+        });
+        // クリックされた行の詳細を開閉する
+        const detailsRow = document.querySelector(`tr[data-details-for="${row.dataset.id}"]`);
         if (detailsRow) {
-            const isHidden = detailsRow.classList.contains('hidden');
-            document.querySelectorAll('tr.project-details').forEach(row => row.classList.add('hidden'));
-            if (isHidden) detailsRow.classList.remove('hidden');
+            detailsRow.classList.toggle('hidden');
         }
     }
 };
