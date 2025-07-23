@@ -20,13 +20,6 @@ export const getUserProfile = async (uid) => {
 export const updateUserProfile = (uid, data) => {
     return setDoc(doc(db(), 'users', uid), data, { merge: true });
 };
-
-/**
- * ユーザーのプロフィール画像をFirebase Storageにアップロードし、ダウンロードURLを返す
- * @param {string} uid ユーザーID
- * @param {File} file アップロードする画像ファイル
- * @returns {Promise<string>} アップロードされた画像のダウンロードURL
- */
 export const uploadUserIcon = async (uid, file) => {
     const filePath = `profile-icons/${uid}/${Date.now()}_${file.name}`;
     const storageRef = ref(storage(), filePath);
@@ -34,7 +27,6 @@ export const uploadUserIcon = async (uid, file) => {
     const downloadURL = await getDownloadURL(snapshot.ref);
     return downloadURL;
 };
-
 export const getUserDetails = async (uid) => {
     const userProfile = await getUserProfile(uid);
     
@@ -133,8 +125,6 @@ export const updateTimestamp = (uid, timestampId, data) => {
 export const deleteTimestamp = (uid, timestampId) => {
     return deleteDoc(doc(db(), 'users', uid, 'timestamps', timestampId));
 };
-
-// ▼▼▼ 【ここから追加】カレンダーの予定をタイムスタンプとして登録する関数 ▼▼▼
 export const addCalendarEventsAsTimestamps = async (uid, events) => {
     const batch = writeBatch(db());
     const timestampsCol = collection(db(), 'users', uid, 'timestamps');
@@ -153,7 +143,6 @@ export const addCalendarEventsAsTimestamps = async (uid, events) => {
 
     await batch.commit();
 };
-// ▲▲▲ ここまで ▲▲▲
 
 // === Notifications ===
 export const addNotification = (notificationData) => {
@@ -182,7 +171,7 @@ export const getNotifications = (callback) => {
     return onSnapshot(q, (querySnapshot) => {
         const notifications = querySnapshot.docs
             .map(doc => ({ id: doc.id, ...doc.data() }))
-            .filter(n => !n.endDate || n.endDate >= today); // endDateが未設定か、今日以降
+            .filter(n => !n.endDate || n.endDate >= today);
         callback(notifications);
     }, (error) => {
         console.error("お知らせの取得に失敗しました:", error);
@@ -190,4 +179,72 @@ export const getNotifications = (callback) => {
 };
 export const deleteNotification = (notificationId) => {
     return deleteDoc(doc(db(), 'notifications', notificationId));
+};
+
+// === Clients & Contacts ===
+export const addClient = (uid, data) => {
+    return addDoc(collection(db(), `users/${uid}/clients`), { ...data, createdAt: serverTimestamp() });
+};
+export const updateClient = (uid, clientId, data) => {
+    return updateDoc(doc(db(), `users/${uid}/clients`, clientId), data);
+};
+export const deleteClient = (uid, clientId) => {
+    return deleteDoc(doc(db(), `users/${uid}/clients`, clientId));
+};
+export const addContact = (uid, clientId, data) => {
+    return addDoc(collection(db(), `users/${uid}/contacts`), { ...data, clientId, createdAt: serverTimestamp() });
+};
+export const updateContact = (uid, contactId, data) => {
+    return updateDoc(doc(db(), `users/${uid}/contacts`, contactId), data);
+};
+export const deleteContact = (uid, contactId) => {
+    return deleteDoc(doc(db(), `users/${uid}/contacts`, contactId));
+};
+export const getClientsAndContacts = (uid, callback) => {
+    const clientsQuery = query(collection(db(), `users/${uid}/clients`), orderBy('name'));
+    const contactsQuery = query(collection(db(), `users/${uid}/contacts`), orderBy('name'));
+
+    return onSnapshot(clientsQuery, clientSnapshot => {
+        onSnapshot(contactsQuery, contactSnapshot => {
+            const contacts = contactSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const clients = clientSnapshot.docs.map(doc => {
+                const clientData = { id: doc.id, ...doc.data() };
+                clientData.contacts = contacts.filter(c => c.clientId === clientData.id);
+                return clientData;
+            });
+            callback(clients);
+        });
+    });
+};
+
+// ★★★★★ ここからが追記されたCSVインポート用の関数です ★★★★★
+// === Batch Operations for CSV Import ===
+export const batchCreateClientsAndContacts = async (uid, newClients, newContacts) => {
+    const batch = writeBatch(db());
+    const clientsRef = collection(db(), `users/${uid}/clients`);
+    const contactsRef = collection(db(), `users/${uid}/contacts`);
+
+    const clientNameToIdMap = {};
+    const existingClientsSnapshot = await getDocs(query(clientsRef));
+    existingClientsSnapshot.forEach(doc => {
+        clientNameToIdMap[doc.data().name] = doc.id;
+    });
+
+    newClients.forEach(clientData => {
+        const newClientRef = doc(clientsRef);
+        batch.set(newClientRef, { ...clientData, createdAt: serverTimestamp() });
+        clientNameToIdMap[clientData.name] = newClientRef.id;
+    });
+
+    newContacts.forEach(contactData => {
+        const clientId = clientNameToIdMap[contactData.clientName];
+        if (clientId) {
+            const newContactRef = doc(contactsRef);
+            const dataToSave = { ...contactData, clientId, createdAt: serverTimestamp() };
+            delete dataToSave.clientName;
+            batch.set(newContactRef, dataToSave);
+        }
+    });
+
+    return batch.commit();
 };
