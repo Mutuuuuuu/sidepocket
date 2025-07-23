@@ -51,9 +51,13 @@
                             </svg>
                         </button>
                         <div id="notification-panel"
-                            class="hidden absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl z-50 border border-gray-200"
-                            style="transform: translateX(-100%);">
-                            <div class="p-4 border-b"><h3 class="font-bold text-gray-800">お知らせ</h3></div>
+                            class="hidden absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-lg shadow-xl z-50 border border-gray-200"
+                            style="transform: translateX(-5%);">
+                            
+                            <div class="flex justify-between items-center p-4 border-b">
+                                <h3 class="font-bold text-gray-800">お知らせ</h3>
+                                <button id="close-notification-panel" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+                            </div>
                             <ul id="notification-list" class="divide-y max-h-96 overflow-y-auto"></ul>
                         </div>
                     </div>
@@ -122,7 +126,14 @@
             </main>
         </div>
     </div>
-    
+        <div id="notification-detail-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center items-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 relative">
+            <button id="close-notification-modal" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+            <h3 id="notification-modal-title" class="text-xl font-bold mb-2"></h3>
+            <p id="notification-modal-date" class="text-sm text-gray-500 mb-4"></p>
+            <div id="notification-modal-content" class="text-gray-700 whitespace-pre-wrap"></div>
+        </div>
+    </div>
     <script type="module" src="js/main.js"></script>
 </body>
 </html>
