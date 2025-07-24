@@ -38,7 +38,7 @@ const setupDOMReferences = () => {
         'table-project-filter', 'timestamps-table-body', 'total-duration', 'total-reward', 
         'monthly-summary-table-body', 'generate-csv-button', 'generate-pdf-button', 'add-timestamp-button',
         'timestamp-modal', 'timestamp-form', 'modal-title', 'timestamp-id', 'modal-date', 
-        'modal-project', 'modal-start-time', 'modal-end-time', 'export-modal', 'export-project-selector-container', 
+        'modal-project', 'modal-start-time', 'modal-end-time', 'modal-memo', 'export-modal', 'export-project-selector-container', 
         'export-project-select', 'export-columns-container', 'execute-export-button'
     ];
     ids.forEach(id => {
@@ -144,7 +144,6 @@ const renderAllTables = () => {
     renderSummaryTable(processedData); // 月次集計はフィルターされたデータで計算
 };
 
-// ▼▼▼ この関数を変更 ▼▼▼
 const populateProjectFilter = () => {
     return new Promise(resolve => {
         getProjects(currentUser.uid, 'all', (projects) => {
@@ -152,7 +151,6 @@ const populateProjectFilter = () => {
             if (dom.tableProjectFilter) {
                 dom.tableProjectFilter.innerHTML = '<option value="all">すべてのプロジェクト</option>';
                 projects.forEach(p => {
-                    // client.name が存在すれば表示に追加する
                     const clientName = p.client?.name ? `${p.client.name} ` : '';
                     const optionText = `${p.code} ${clientName}${p.name}`;
                     dom.tableProjectFilter.innerHTML += `<option value="${p.code}">${optionText}</option>`;
@@ -162,7 +160,6 @@ const populateProjectFilter = () => {
         });
     });
 };
-// ▲▲▲ ここまで ▲▲▲
 
 const calculateBilledHours = (actualHours, projectSettings) => {
     if (!projectSettings) return actualHours;
@@ -182,13 +179,15 @@ const renderDetailedTable = (processedData) => {
     dom.timestampsTableBody.innerHTML = '';
     
     if (processedData.length === 0) {
-        dom.timestampsTableBody.innerHTML = '<tr><td colspan="7" class="text-center p-8 text-gray-500">対象の稼働実績はありません。</td></tr>';
+        dom.timestampsTableBody.innerHTML = '<tr><td colspan="9" class="text-center p-8 text-gray-500">対象の稼働実績はありません。</td></tr>';
         return;
     }
     
     processedData.sort((a,b) => b.clockInTime.toDate() - a.clockInTime.toDate()).forEach(data => {
         const clockInDate = data.clockInTime.toDate();
         const clockOutDate = data.clockOutTime ? data.clockOutTime.toDate() : null;
+        const categories = (data.categories && data.categories.length > 0) ? data.categories.join(', ') : '';
+        const memo = data.memo || '';
 
         const row = dom.timestampsTableBody.insertRow();
         row.dataset.id = data.id;
@@ -200,6 +199,8 @@ const renderDetailedTable = (processedData) => {
             <td class="px-6 py-4">${clockOutDate ? clockOutDate.toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'}) : ''}</td>
             <td class="px-6 py-4 text-right">${(data.actualHours || 0).toFixed(2)}</td>
             <td class="px-6 py-4 text-right">${(data.billedHours || 0).toFixed(2)}</td>
+            <td class="px-6 py-4 text-xs">${categories}</td>
+            <td class="px-6 py-4 text-xs truncate" title="${memo}">${memo}</td>
             <td class="px-6 py-4 text-center">
                 <button class="edit-btn text-indigo-600 hover:text-indigo-900 font-medium">編集</button>
                 <button class="delete-btn text-red-600 hover:text-red-900 font-medium ml-2">削除</button>
@@ -213,7 +214,6 @@ const renderSummaryTable = (processedData) => {
     dom.monthlySummaryTableBody.innerHTML = '';
 
     const summary = {};
-    // 月次集計はフィルター前の `tableTimestamps` を使う
     tableTimestamps.forEach(data => {
         const project = allProjects.find(p => p.code === data.project.code);
         const actualHours = data.durationHours || 0;
@@ -262,17 +262,15 @@ const renderSummaryTable = (processedData) => {
         `;
     });
 
-    // 表示中リストの合計はフィルター後の `processedData` で計算
     const grandTotalBilledHours = processedData.reduce((sum, d) => sum + (d.billedHours || 0), 0);
     const grandTotalReward = processedData.reduce((sum, d) => {
         const settings = allProjects.find(p => p.code === d.project.code);
-        if (settings && settings.contractType !== 'monthly') { // 月額固定は個別報酬に加算しない
+        if (settings && settings.contractType !== 'monthly') {
             return sum + (d.billedHours * (settings.unitPrice || 0));
         }
         return sum;
     }, 0);
 
-    // 月額固定の報酬を一度だけ加算
     const monthlyRewards = Object.values(summary)
         .filter(proj => proj.projectSettings && proj.projectSettings.contractType === 'monthly')
         .reduce((sum, proj) => sum + proj.totalReward, 0);
@@ -299,6 +297,9 @@ const openTimestampModal = (timestamp) => {
     dom.timestampForm.reset();
     dom.modalProject.innerHTML = allProjects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
 
+    // カテゴリのチェックをリセット
+    document.querySelectorAll('#modal-category input[type="checkbox"]').forEach(cb => cb.checked = false);
+
     if (timestamp) {
         dom.modalTitle.textContent = '稼働実績の編集';
         dom.timestampId.value = timestamp.id;
@@ -313,6 +314,13 @@ const openTimestampModal = (timestamp) => {
         dom.modalStartTime.value = timestamp.clockInTime.toDate().toTimeString().slice(0, 5);
         if (timestamp.clockOutTime) {
             dom.modalEndTime.value = timestamp.clockOutTime.toDate().toTimeString().slice(0, 5);
+        }
+        dom.modalMemo.value = timestamp.memo || '';
+        if (timestamp.categories) {
+            timestamp.categories.forEach(cat => {
+                const checkbox = document.querySelector(`#modal-category input[value="${cat}"]`);
+                if (checkbox) checkbox.checked = true;
+            });
         }
     } else {
         dom.modalTitle.textContent = '稼働実績の新規追加';
@@ -332,6 +340,7 @@ const handleTimestampFormSubmit = async (e) => {
     
     const clockInTime = new Date(`${dom.modalDate.value}T${dom.modalStartTime.value}`);
     const clockOutTime = new Date(`${dom.modalDate.value}T${dom.modalEndTime.value}`);
+    const categories = Array.from(document.querySelectorAll('#modal-category input:checked')).map(cb => cb.value);
 
     if (clockInTime >= clockOutTime) {
         showStatus('終了時刻は開始時刻より後に設定してください。', true);
@@ -344,6 +353,8 @@ const handleTimestampFormSubmit = async (e) => {
         clockInTime,
         clockOutTime,
         status: 'completed',
+        memo: dom.modalMemo.value.trim(),
+        categories: categories
     };
 
     try {
@@ -379,10 +390,12 @@ const handleDeleteTimestamp = async (timestampId) => {
     }
 };
 
+// ▼▼▼ この関数を修正 ▼▼▼
 const openExportModal = (type) => {
     currentExportType = type;
     dom.exportColumnsContainer.innerHTML = '';
     
+    // 出力可能な項目を定義
     const columns = {
         date:        { label: '日付',        checked: true,  disabled: true },
         project:     { label: 'プロジェクト名',  checked: true,  disabled: true },
@@ -390,6 +403,8 @@ const openExportModal = (type) => {
         endTime:     { label: '退勤',        checked: false, disabled: false },
         actualHours: { label: '実稼働(h)',     checked: false, disabled: false },
         performance: { label: '実績(h)',     checked: true,  disabled: false },
+        category:    { label: 'カテゴリ',      checked: false, disabled: false },
+        memo:        { label: '備考',        checked: false, disabled: false },
     };
     
     if (type === 'pdf') {
@@ -400,6 +415,8 @@ const openExportModal = (type) => {
         columns.startTime.checked = true;
         columns.endTime.checked = true;
         columns.actualHours.checked = true;
+        columns.category.checked = true; // CSVではデフォルトでチェック
+        columns.memo.checked = true;     // CSVではデフォルトでチェック
     }
 
     Object.entries(columns).forEach(([key, { label, checked, disabled }]) => {
@@ -423,10 +440,12 @@ const handleExport = () => {
                 endTime: ts.clockOutTime ? ts.clockOutTime.toDate().toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'}) : '',
                 actualHours: (ts.durationHours || 0).toFixed(2),
                 performance: calculateBilledHours(ts.durationHours || 0, project).toFixed(2),
+                category: (ts.categories || []).join(', '),
+                memo: ts.memo || ''
             };
         });
 
-        const headers = { date: '日付', project: 'プロジェクト', startTime: '出勤', endTime: '退勤', actualHours: '実稼働(h)', performance: '実績(h)' };
+        const headers = { date: '日付', project: 'プロジェクト', startTime: '出勤', endTime: '退勤', actualHours: '実稼働(h)', performance: '実績(h)', category: 'カテゴリ', memo: '備考' };
         const filteredHeaders = Object.fromEntries(Object.entries(headers).filter(([key]) => selectedColumns.includes(key)));
 
         exportToCsv(dataForExport, filteredHeaders, `稼働実績一覧.csv`);
@@ -468,10 +487,12 @@ const generatePdf = (columns, projectName) => {
             endTime: ts.clockOutTime ? ts.clockOutTime.toDate().toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'}) : '',
             actualHours: (ts.durationHours || 0).toFixed(2),
             performance: calculateBilledHours(ts.durationHours || 0, project).toFixed(2),
+            category: (ts.categories || []).join(', '),
+            memo: ts.memo || ''
         };
     });
 
-    const nameMap = { date: '日付', project: 'プロジェクト名', startTime: '出勤', endTime: '退勤', actualHours: '実稼働(h)', performance: '実績(h)' };
+    const nameMap = { date: '日付', project: 'プロジェクト名', startTime: '出勤', endTime: '退勤', actualHours: '実稼働(h)', performance: '実績(h)', category: 'カテゴリ', memo: '備考' };
     const head = [columns.map(col => nameMap[col])];
     const body = dataForExport.map(row => columns.map(col => row[col]));
     
@@ -485,6 +506,7 @@ const generatePdf = (columns, projectName) => {
     
     doc.save(`稼働実績報告書_${projectName}.pdf`);
 };
+// ▲▲▲ ここまで修正 ▲▲▲
 
 const renderMonthlyLineChart = (timestamps, chartStartDate, chartEndDate) => {
     if (!dom.monthlyLineChart) return;

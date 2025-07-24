@@ -1,4 +1,4 @@
-import { getProjects, getActiveClockIn, getRecentTimestamps, clockIn, clockOut } from './services/firestoreService.js';
+import { getProjects, getActiveClockIn, getRecentTimestamps, clockIn, clockOut, updateTimestamp } from './services/firestoreService.js';
 import { toggleLoading, showStatus } from './services/uiService.js';
 
 let currentUser;
@@ -8,6 +8,8 @@ let projects = [];
 // --- DOM要素 ---
 let punchButton, punchStatusDisplay, punchProjectDisplay, recordsContainer;
 let projectSelectionArea, projectSelectMain, liveClockElement;
+let clockOutDetailsModal, clockOutDetailsForm, clockOutTimestampId, skipDetailsButton;
+
 
 export const initHomePage = async (user) => { // asyncを追加
     if (!user) return;
@@ -21,18 +23,22 @@ export const initHomePage = async (user) => { // asyncを追加
     projectSelectionArea = document.getElementById('project-selection-area');
     projectSelectMain = document.getElementById('project-select-main');
     liveClockElement = document.getElementById('live-clock');
+    clockOutDetailsModal = document.getElementById('clock-out-details-modal');
+    clockOutDetailsForm = document.getElementById('clock-out-details-form');
+    clockOutTimestampId = document.getElementById('clock-out-timestamp-id');
+    skipDetailsButton = document.getElementById('skip-details-button');
 
     if (!punchButton) return;
 
     // イベントリスナーを設定
     punchButton.addEventListener('click', handlePunchButtonClick);
+    clockOutDetailsForm.addEventListener('submit', handleDetailsFormSubmit);
+    skipDetailsButton.addEventListener('click', () => clockOutDetailsModal.classList.add('hidden'));
     
     // 時計の表示を開始
     updateClock();
     setInterval(updateClock, 1000);
     
-    // ▼▼▼ 修正箇所 ▼▼▼
-    // 全てのデータ読み込みを待ってからローディングを解除
     try {
         await Promise.all([
             loadActiveProjects(),
@@ -43,7 +49,7 @@ export const initHomePage = async (user) => { // asyncを追加
         console.error("ホームページの初期化中にエラーが発生しました:", error);
         showStatus('ページの読み込みに失敗しました。', true);
     } finally {
-        toggleLoading(false); // 全ての処理が終わった後にローディングを解除
+        toggleLoading(false);
     }
 };
 
@@ -53,8 +59,6 @@ const updateClock = () => {
     }
 };
 
-// ▼▼▼ 修正箇所 ▼▼▼
-// Promiseを返すように変更
 const loadActiveProjects = () => {
     return new Promise((resolve) => {
         const unsubscribe = getProjects(currentUser.uid, 'active', (activeProjects) => {
@@ -68,14 +72,11 @@ const loadActiveProjects = () => {
                     projectSelectMain.innerHTML += `<option value="${p.id}">${p.name}</option>`;
                 });
             }
-            // この関数は継続的に監視するため、初回取得時に resolve する
             resolve();
         });
     });
 };
 
-// ▼▼▼ 修正箇所 ▼▼▼
-// Promiseを返すように変更
 const listenForActiveClockIn = () => {
     return new Promise((resolve) => {
         getActiveClockIn(currentUser.uid, (doc) => {
@@ -86,8 +87,6 @@ const listenForActiveClockIn = () => {
     });
 };
 
-// ▼▼▼ 修正箇所 ▼▼▼
-// Promiseを返すように変更
 const listenForRecentRecords = () => {
     return new Promise((resolve) => {
         getRecentTimestamps(currentUser.uid, 5, (records) => {
@@ -97,15 +96,21 @@ const listenForRecentRecords = () => {
     });
 };
 
-
+// ▼▼▼ この関数を修正 ▼▼▼
 const handlePunchButtonClick = async () => {
     punchButton.disabled = true;
     if (activeClockInDoc) {
+        // 退勤処理の前に、更新対象のドキュメントIDをローカル変数に保持しておく
+        const docIdToUpdate = activeClockInDoc.id;
         try {
-            await clockOut(currentUser.uid, activeClockInDoc.id);
+            await clockOut(currentUser.uid, docIdToUpdate);
             showStatus('退勤しました。お疲れ様でした！', false);
+            // 保持しておいたIDを使ってモーダルを開く
+            openDetailsModal(docIdToUpdate);
         } catch (error) {
+            console.error("退勤処理エラー:", error);
             showStatus('退勤処理中にエラーが発生しました。', true);
+            punchButton.disabled = false; // エラー時はボタンを再度有効化
         }
     } else {
         const selectedProjectId = projectSelectMain.value;
@@ -121,7 +126,33 @@ const handlePunchButtonClick = async () => {
             showStatus('出勤しました。おはようございます！', false);
         } catch (error) {
             showStatus('出勤処理中にエラーが発生しました。', true);
+            punchButton.disabled = false; // エラー時はボタンを再度有効化
         }
+    }
+};
+// ▲▲▲ ここまで修正 ▲▲▲
+
+const openDetailsModal = (timestampId) => {
+    clockOutDetailsForm.reset();
+    clockOutTimestampId.value = timestampId;
+    clockOutDetailsModal.classList.remove('hidden');
+};
+
+const handleDetailsFormSubmit = async (e) => {
+    e.preventDefault();
+    toggleLoading(true);
+    const timestampId = clockOutTimestampId.value;
+    const memo = document.getElementById('clock-out-memo').value.trim();
+    const categories = Array.from(document.querySelectorAll('#clock-out-category-options input:checked')).map(cb => cb.value);
+
+    try {
+        await updateTimestamp(currentUser.uid, timestampId, { memo, categories });
+        showStatus('作業内容を保存しました。');
+        clockOutDetailsModal.classList.add('hidden');
+    } catch (error) {
+        showStatus('作業内容の保存に失敗しました。', true);
+    } finally {
+        toggleLoading(false);
     }
 };
 

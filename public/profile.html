@@ -117,6 +117,14 @@
             <!-- ▲▲▲ ここまで ▲▲▲ -->
         </div>
     </div>
+        <div id="notification-detail-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center items-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 relative">
+            <button id="close-notification-modal" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+            <h3 id="notification-modal-title" class="text-xl font-bold mb-2"></h3>
+            <p id="notification-modal-date" class="text-sm text-gray-500 mb-4"></p>
+            <div id="notification-modal-content" class="text-gray-700 whitespace-pre-wrap"></div>
+        </div>
+    </div>
     <script type="module" src="js/main.js"></script>
 </body>
 </html>

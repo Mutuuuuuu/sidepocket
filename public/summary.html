@@ -22,19 +22,21 @@
         <div id="content-container" class="relative md:ml-20 transition-all duration-300 ease-in-out flex-1 flex flex-col">
             <header class="flex items-center p-4 bg-white border-b sticky top-0 z-20 h-20">
                 <div class="flex-1">
-                    <div class="block md:hidden">
+                    <div class="md:hidden">
                         <button id="mobile-menu-button" class="text-gray-500 hover:text-gray-600 focus:outline-none">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                            </svg>
                         </button>
                     </div>
                 </div>
-            
+
                 <div class="flex-1 flex justify-center">
                     <div class="hidden md:flex">
-                         <img src="images/sidepocket_Logo.png" alt="Sidepocket Logo" class="h-10">
+                        <img src="images/sidepocket_Logo.png" alt="Sidepocket Logo" class="h-10">
                     </div>
                 </div>
-            
+
                 <div class="flex-1 flex justify-end items-center gap-4">
                     <div class="flex items-center gap-2">
                         <span id="header-display-name" class="text-gray-700 hidden sm:inline">Guest</span>
@@ -44,9 +46,11 @@
                     </div>
                     <div class="relative">
                         <button id="notification-button" class="text-gray-500 hover:text-gray-600">
-                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
                         </button>
-                        <div id="notification-panel"
+                            <div id="notification-panel"
                             class="hidden absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl z-50 border border-gray-200"
                             style="transform: translateX(-100%);">
                             <div class="p-4 border-b"><h3 class="font-bold text-gray-800">お知らせ</h3></div>
@@ -117,6 +121,8 @@
                                 <th scope="col" class="px-6 py-3">退勤</th>
                                 <th scope="col" class="px-6 py-3 text-right">実稼働(h)</th>
                                 <th scope="col" class="px-6 py-3 text-right">実績(h)</th>
+                                <th scope="col" class="px-6 py-3">カテゴリ</th>
+                                <th scope="col" class="px-6 py-3">備考</th>
                                 <th scope="col" class="px-6 py-3 text-center">操作</th>
                             </tr>
                         </thead>
@@ -144,6 +150,18 @@
                                 <div><label for="modal-start-time" class="block text-sm font-medium text-gray-700">出勤</label><input type="time" id="modal-start-time" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></div>
                                 <div><label for="modal-end-time" class="block text-sm font-medium text-gray-700">退勤</label><input type="time" id="modal-end-time" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></div>
                             </div>
+                            <fieldset>
+                                <legend class="block text-sm font-medium text-gray-700">カテゴリ</legend>
+                                <div id="modal-category" class="mt-2 space-x-4">
+                                    <label class="inline-flex items-center"><input type="checkbox" name="category" value="会議" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"> <span class="ml-2">会議</span></label>
+                                    <label class="inline-flex items-center"><input type="checkbox" name="category" value="作業" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"> <span class="ml-2">作業</span></label>
+                                    <label class="inline-flex items-center"><input type="checkbox" name="category" value="その他" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"> <span class="ml-2">その他</span></label>
+                                </div>
+                            </fieldset>
+                            <div>
+                                <label for="modal-memo" class="block text-sm font-medium text-gray-700">備考</label>
+                                <textarea id="modal-memo" rows="3" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea>
+                            </div>
                         </div>
                     </div>
                     <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse"><button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 sm:ml-3 sm:w-auto sm:text-sm">保存</button><button type="button" class="modal-cancel-button mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:w-auto sm:text-sm">キャンセル</button></div>
@@ -165,15 +183,6 @@
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse"><button type="button" id="execute-export-button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 sm:ml-3 sm:w-auto sm:text-sm">実行</button><button type="button" class="modal-cancel-button mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:w-auto sm:text-sm">キャンセル</button></div>
             </div>
-        </div>
-    </div>
-
-        <div id="notification-detail-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center items-center z-50 p-4">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 relative">
-            <button id="close-notification-modal" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
-            <h3 id="notification-modal-title" class="text-xl font-bold mb-2"></h3>
-            <p id="notification-modal-date" class="text-sm text-gray-500 mb-4"></p>
-            <div id="notification-modal-content" class="text-gray-700 whitespace-pre-wrap"></div>
         </div>
     </div>
 

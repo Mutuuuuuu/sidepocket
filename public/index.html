@@ -82,10 +82,7 @@
                 </div>
             </main>
             
-            <!-- ▼▼▼ 広告表示エリア ▼▼▼ -->
             <div id="ad-container" class="hidden px-6 md:px-8"></div>
-            <!-- ▲▲▲ ここまで ▲▲▲ -->
-
         </div>
     </div>
     
@@ -95,6 +92,39 @@
             <h3 id="notification-modal-title" class="text-xl font-bold mb-2"></h3>
             <p id="notification-modal-date" class="text-sm text-gray-500 mb-4"></p>
             <div id="notification-modal-content" class="text-gray-700 whitespace-pre-wrap"></div>
+        </div>
+    </div>
+
+    <div id="clock-out-details-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="fixed inset-0 bg-black bg-opacity-50"></div>
+            <div class="bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full z-50">
+                <form id="clock-out-details-form">
+                    <input type="hidden" id="clock-out-timestamp-id">
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">お疲れさまでした！</h3>
+                        <p class="text-sm text-gray-500 mt-1">作業内容を記録できます。（任意）</p>
+                        <div class="mt-4 space-y-4">
+                            <fieldset>
+                                <legend class="block text-sm font-medium text-gray-700">カテゴリ</legend>
+                                <div id="clock-out-category-options" class="mt-2 space-x-4">
+                                    <label class="inline-flex items-center"><input type="checkbox" name="category" value="会議" class="rounded"> <span class="ml-2">会議</span></label>
+                                    <label class="inline-flex items-center"><input type="checkbox" name="category" value="作業" class="rounded"> <span class="ml-2">作業</span></label>
+                                    <label class="inline-flex items-center"><input type="checkbox" name="category" value="その他" class="rounded"> <span class="ml-2">その他</span></label>
+                                </div>
+                            </fieldset>
+                            <div>
+                                <label for="clock-out-memo" class="block text-sm font-medium text-gray-700">備考</label>
+                                <textarea id="clock-out-memo" rows="3" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 sm:ml-3 sm:w-auto sm:text-sm">保存</button>
+                        <button type="button" id="skip-details-button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:w-auto sm:text-sm">スキップ</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
     

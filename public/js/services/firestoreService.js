@@ -93,9 +93,17 @@ export const getRecentTimestamps = (uid, count, cb) => {
 export const clockIn = (uid, proj) => {
     return addDoc(collection(db(), 'users', uid, 'timestamps'), { project: proj, clockInTime: serverTimestamp(), clockOutTime: null, status: 'active' });
 };
+
+// ▼▼▼ この関数を修正 ▼▼▼
 export const clockOut = (uid, docId) => {
-    return setDoc(doc(db(), 'users', uid, 'timestamps', docId), { clockOutTime: serverTimestamp(), status: 'completed' }, { merge: true });
+    // 既存ドキュメントの一部を更新するため、setDocではなくupdateDocを使用します。
+    return updateDoc(doc(db(), 'users', uid, 'timestamps', docId), { 
+        clockOutTime: serverTimestamp(), 
+        status: 'completed' 
+    });
 };
+// ▲▲▲ ここまで修正 ▲▲▲
+
 export const getTimestampsForPeriod = async (uid, start, end) => {
     const q = query(collection(db(), 'users', uid, 'timestamps'), where('status', '==', 'completed'), where('clockInTime', '>=', start), where('clockInTime', '<', end));
     const snapshot = await getDocs(q);
@@ -115,12 +123,16 @@ export const addTimestamp = (uid, data) => {
     return addDoc(collection(db(), 'users', uid, 'timestamps'), firestoreData);
 };
 export const updateTimestamp = (uid, timestampId, data) => {
-    const firestoreData = {
-        ...data,
-        clockInTime: Timestamp.fromDate(data.clockInTime),
-        clockOutTime: Timestamp.fromDate(data.clockOutTime),
-    };
-    return setDoc(doc(db(), 'users', uid, 'timestamps', timestampId), firestoreData, { merge: true });
+    const dataToUpdate = { ...data };
+    
+    if (data.clockInTime instanceof Date) {
+        dataToUpdate.clockInTime = Timestamp.fromDate(data.clockInTime);
+    }
+    if (data.clockOutTime instanceof Date) {
+        dataToUpdate.clockOutTime = Timestamp.fromDate(data.clockOutTime);
+    }
+    
+    return updateDoc(doc(db(), 'users', uid, 'timestamps', timestampId), dataToUpdate);
 };
 export const deleteTimestamp = (uid, timestampId) => {
     return deleteDoc(doc(db(), 'users', uid, 'timestamps', timestampId));
@@ -216,23 +228,12 @@ export const getClientsAndContacts = (uid, callback) => {
         });
     });
 };
-
-/**
- * 有効な取引先リストを取得する（プロジェクト管理画面のドロップダウン用）
- * @param {string} uid ユーザーID
- * @returns {Promise<Array>} 有効な取引先の配列を返すPromise
- */
 export const getActiveClients = async (uid) => {
     const clientsRef = collection(db(), `users/${uid}/clients`);
-    // Firestoreのクエリでは、isActiveフィールドがtrueのものを対象とします。
     const q = query(clientsRef, where("isActive", "==", true), orderBy("name"));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
-
-
-// ★★★★★ ここからが追記されたCSVインポート用の関数です ★★★★★
-// === Batch Operations for CSV Import ===
 export const batchCreateClientsAndContacts = async (uid, newClients, newContacts) => {
     const batch = writeBatch(db());
     const clientsRef = collection(db(), `users/${uid}/clients`);
