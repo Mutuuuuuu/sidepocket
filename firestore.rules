@@ -5,14 +5,19 @@ service cloud.firestore {
 
     // ユーザーのプロフィール情報 (/users/{userId})
     match /users/{userId} {
-      // 読み取りと更新は、自分自身のみ許可
-      allow read, update: if request.auth != null && request.auth.uid == userId;
-      // アカウント作成は認証済みユーザーなら誰でも許可
+      // 読み取りは、認証済みのユーザーなら誰でも許可
+      allow read: if request.auth != null;
+
+      // 新規作成は認証済みのユーザーなら誰でも許可
       allow create: if request.auth != null;
+
+      // 更新は、自分自身のみ許可
+      // 招待コード機能で追加されたフィールドも更新できるようにする
+      allow update: if request.auth != null && request.auth.uid == userId;
     }
 
-    // ユーザーのサブコレクション (projects, timestamps, clients, contacts)
-    // 自分のデータに限り、すべての読み書きを許可します。
+    // ユーザーのサブコレクション (projects, timestamps, clients など)
+    // 自分のデータに限り、すべての読み書きを許可
     match /users/{userId}/{documents=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }

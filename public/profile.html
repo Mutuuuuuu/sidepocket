@@ -16,6 +16,7 @@
 
     <div id="app-container" class="relative min-h-screen md:flex opacity-0">
         <div id="header-placeholder"></div>
+
         <div id="content-container" class="relative md:ml-20 transition-all duration-300 ease-in-out flex-1 flex flex-col">
             <header class="flex items-center p-4 bg-white border-b sticky top-0 z-20 h-20">
                 <div class="flex-1">
@@ -52,27 +53,59 @@
                     </div>
                 </div>
             </header>
+
             <main class="p-6 md:p-8 flex-1 overflow-y-auto">
                 <h1 class="text-3xl font-bold text-gray-800 mb-6">プロフィール</h1>
                 <div id="status-message-container"></div>
                 
                 <div class="max-w-3xl mx-auto space-y-8">
-                    <!-- ▼▼▼ 【追加】プラン情報セクション ▼▼▼ -->
                     <div class="bg-white p-8 rounded-xl shadow-md">
                         <h2 class="text-xl font-bold text-gray-800 mb-4">会員プラン</h2>
-                        <div id="subscription-status" class="p-4 bg-gray-100 rounded-lg flex items-center justify-between">
-                            <div>
-                                <p class="text-sm text-gray-600">現在のプラン</p>
-                                <p id="current-plan" class="text-2xl font-bold text-gray-900">---</p>
+                        <div id="subscription-status" class="p-4 bg-gray-100 rounded-lg">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600">現在のプラン</p>
+                                    <p id="current-plan" class="text-2xl font-bold text-gray-900">---</p>
+                                </div>
+                                <button id="upgrade-button" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 hidden">
+                                    アップグレード
+                                </button>
                             </div>
-                            <button id="upgrade-button" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 hidden">
-                                アップグレード
-                            </button>
+                            <div id="plan-period" class="mt-2 text-sm text-gray-600 hidden">
+                                有効期限: <span id="plan-end-date" class="font-semibold"></span>
+                            </div>
                         </div>
                         <p id="plan-description" class="text-sm text-gray-500 mt-3"></p>
                     </div>
-                    <!-- ▲▲▲ ここまで ▲▲▲ -->
-
+                    
+                    <div class="bg-white p-8 rounded-xl shadow-md">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">招待プログラム</h2>
+                        <p class="text-sm text-gray-600 mb-4">
+                            お友達を招待すると、あなたもお友達も特典をGETできます！<br>
+                            ・招待した方：Standardプランを2ヶ月間延長<br>
+                            ・招待された方：Standardプランを1ヶ月間無料
+                        </p>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">あなたの招待コード</label>
+                                <div class="mt-1 flex rounded-md shadow-sm">
+                                    <input type="text" id="my-referral-code" readonly class="focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-none rounded-l-md sm:text-sm border-gray-300 bg-gray-100 cursor-pointer">
+                                    <button type="button" id="copy-referral-code" class="-ml-px relative inline-flex items-center space-x-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+                                        <span>コピー</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <form id="referral-form">
+                                <label for="referral-code-input" class="block text-sm font-medium text-gray-700">招待コードの適用</label>
+                                <div class="mt-1 flex rounded-md shadow-sm">
+                                    <input type="text" id="referral-code-input" placeholder="招待コードを入力" class="focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-none rounded-l-md sm:text-sm border-gray-300">
+                                    <button type="submit" class="w-24 -ml-px relative inline-flex items-center justify-center space-x-2 px-4 py-2 border border-transparent text-sm font-medium rounded-r-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                        適用
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                     <div class="bg-white p-8 rounded-xl shadow-md">
                         <h2 class="text-xl font-bold text-gray-800 mb-4">プロフィール情報</h2>
                         <form id="profile-form">
@@ -81,7 +114,7 @@
                                     <label class="block text-sm font-medium text-gray-700">プロフィール画像</label>
                                     <div class="mt-2 flex items-center space-x-6">
                                         <img id="user-icon-preview" class="h-24 w-24 rounded-full object-cover" src="images/sidepocket_symbol.png" alt="User icon preview">
-                                        <label for="icon-upload-input" class="cursor-pointer bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50">
+                                        <label for="icon-upload-input" class="cursor-pointer bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                             <span>変更する</span>
                                             <input id="icon-upload-input" name="icon-upload" type="file" class="sr-only" accept="image/png, image/jpeg">
                                         </label>
@@ -89,21 +122,21 @@
                                 </div>
                                 <div>
                                     <label for="display-name-input" class="block text-sm font-medium text-gray-700">表示名</label>
-                                    <input type="text" id="display-name-input" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                    <input type="text" id="display-name-input" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <label for="last-name-input" class="block text-sm font-medium text-gray-700">姓</label>
-                                        <input type="text" id="last-name-input" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                        <input type="text" id="last-name-input" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                     </div>
                                     <div>
                                         <label for="first-name-input" class="block text-sm font-medium text-gray-700">名</label>
-                                        <input type="text" id="first-name-input" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                        <input type="text" id="first-name-input" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                     </div>
                                 </div>
                             </div>
                             <div class="pt-8 text-right">
-                                <button type="submit" id="update-profile-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
+                                <button type="submit" id="update-profile-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                     プロフィールを更新
                                 </button>
                             </div>
@@ -112,12 +145,11 @@
                 </div>
             </main>
 
-            <!-- ▼▼▼ 広告表示エリア ▼▼▼ -->
             <div id="ad-container" class="hidden px-6 md:px-8"></div>
-            <!-- ▲▲▲ ここまで ▲▲▲ -->
         </div>
     </div>
-        <div id="notification-detail-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center items-center z-50 p-4">
+
+    <div id="notification-detail-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center items-center z-50 p-4">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 relative">
             <button id="close-notification-modal" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
             <h3 id="notification-modal-title" class="text-xl font-bold mb-2"></h3>
@@ -125,6 +157,7 @@
             <div id="notification-modal-content" class="text-gray-700 whitespace-pre-wrap"></div>
         </div>
     </div>
+    
     <script type="module" src="js/main.js"></script>
-</body>
+     </body>
 </html>

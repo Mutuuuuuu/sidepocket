@@ -13,12 +13,10 @@
 </head>
 <body class="bg-gray-50 min-h-screen">
 
-  <!-- ローディングオーバーレイ -->
   <div id="loading-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center z-50 hidden">
     <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
   </div>
 
-  <!-- コンテンツ -->
   <div class="min-h-screen flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8">
       <div class="text-center">
@@ -51,10 +49,16 @@
           <div>
             <label for="password-confirm" class="sr-only">パスワード（確認用）</label>
             <input id="password-confirm" name="passwordConfirm" type="password" required
-              class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               placeholder="パスワード（確認用）" />
           </div>
-        </div>
+          <div>
+            <label for="referral-code" class="sr-only">招待コード</label>
+            <input id="referral-code" name="referralCode" type="text"
+              class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              placeholder="招待コード (任意)" />
+          </div>
+          </div>
 
         <div class="flex items-center">
           <input id="terms-agree" name="terms" type="checkbox" required
@@ -80,7 +84,6 @@
     </div>
   </div>
 
-  <!-- ✅ JSは type="module" を明記して正しいパスで -->
   <script type="module" src="/js/signup.js"></script>
 </body>
 </html>
