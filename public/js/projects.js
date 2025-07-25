@@ -17,12 +17,13 @@ const domElements = {};
 
 let currentSort = { key: 'name', direction: 'asc' };
 
+// ▼▼▼ 【修正点1】 'open-add-project-modal' を要素IDのリストに追加 ▼▼▼
 const elementIds = [
     'projects-table-body', 'project-modal', 'project-form', 'modal-title', 'status-filter',
     'project-id', 'project-name', 'project-code', 'project-is-active', 'is-active-label',
     'contract-type', 'unit-price', 'monthly-fixed-rate', 'billing-cycle', 'calculation-method',
     'billing-start-date', 'billing-end-date', 'monthly-base-hours', 'billing-adjustment-type',
-    'monthly-min-hours', 'monthly-max-hours', 'project-client'
+    'monthly-min-hours', 'monthly-max-hours', 'project-client', 'open-add-project-modal'
 ];
 
 const getContractTypeName = (type) => ({ hourly: '時間単価', monthly: '月額固定' }[type] || '未設定');
@@ -52,8 +53,12 @@ export const initProjectsPage = async (user) => {
     currentUser = user;
     
     elementIds.forEach(id => { domElements[id] = document.getElementById(id); });
-    domElements['open-add-project-modal'] = document.getElementById('open-add-project-modal');
-    if (!domElements['projects-table-body']) return;
+    
+    // ▼▼▼ 【修正点2】 処理が中断されないように、ボタンやテーブルの存在を個別に確認してイベントを設定 ▼▼▼
+    if (!domElements['projects-table-body'] || !domElements['open-add-project-modal']) {
+        console.error("必要なUI要素が見つからないため、プロジェクトページの初期化に失敗しました。");
+        return;
+    }
 
     try {
         allClients = await getActiveClients(currentUser.uid);

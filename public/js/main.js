@@ -1,26 +1,38 @@
 import { initializeFirebase } from './services/firebaseService.js';
-import { attachAuthListener, loadHeader } from './services/authService.js';
+import { loadHeader } from './services/authService.js';
 import { getUserProfile, getNotifications } from './services/firestoreService.js';
+import { onAuthStateChanged, getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
 const appContainer = document.getElementById('app-container');
 const loadingOverlay = document.getElementById('loading-overlay');
 
 /**
- * ページの初期化
+ * ページの初期化（新しい安定した方式）
  */
-const initializePage = async () => {
-    await initializeFirebase();
-    const user = await attachAuthListener();
-    if (user) {
-        await loadHeader();
-        // DOMの描画が完了してからUI初期化を実行
-        setTimeout(async () => {
-            await initializeUI(user);
-        }, 0);
+const main = async () => {
+    try {
+        await initializeFirebase();
+        await loadHeader(); // 静的なヘッダーを読み込む
+
+        const auth = getAuth();
+        onAuthStateChanged(auth, async (user) => {
+            // ログイン状態が確定した後の処理
+            if (user) {
+                // ログインしている場合
+                await initializeUI(user);
+                loadPageScript(user);
+            } else {
+                // ログインしていない場合
+                loadPageScript(null);
+            }
+            // 最後にローディング画面を非表示にする
+            if (appContainer) appContainer.classList.remove('opacity-0');
+            if (loadingOverlay) loadingOverlay.classList.add('hidden');
+        });
+    } catch (error) {
+        console.error("アプリケーションの初期化に致命的なエラーが発生しました:", error);
+        if (loadingOverlay) loadingOverlay.classList.add('hidden');
     }
-    loadPageScript(user);
-    if (appContainer) appContainer.classList.remove('opacity-0');
-    if (loadingOverlay) loadingOverlay.classList.add('hidden');
 };
 
 /**
@@ -38,20 +50,17 @@ const initializeUI = async (user) => {
     if (headerDisplayName) headerDisplayName.textContent = displayName;
     if (headerUserIcon) headerUserIcon.src = photoURL;
 
-    // --- ▼▼▼ 管理者リンクの表示制御 ▼▼▼ ---
+    // 管理者リンクの表示制御
     const idTokenResult = await user.getIdTokenResult();
     if (idTokenResult.claims.isAdmin) {
         const adminLink = document.getElementById('admin-link');
         if (adminLink) adminLink.classList.remove('hidden');
     }
-    // --- ▲▲▲ ここまで ▲▲▲ ---
 
-    // --- ▼▼▼ 【追加】会員プランに応じた広告表示 ▼▼▼ ---
-    // Freeプランの場合、広告を表示する
+    // 会員プランに応じた広告表示
     if (userProfile?.plan === 'Free') {
         showAds();
     }
-    // --- ▲▲▲ 【ここまで】 ▲▲▲ ---
 
     // 現在のページに応じてナビゲーションのスタイルを適用
     const currentPath = window.location.pathname;
@@ -70,9 +79,7 @@ const initializeUI = async (user) => {
 };
 
 /**
- * 【追加】広告表示エリアに広告を挿入する
- * この関数はFreeプランのユーザーにのみ呼び出されます。
- * 各ページのHTMLに <div id="ad-container" class="hidden"></div> のような要素を配置してください。
+ * 広告表示エリアに広告を挿入する
  */
 const showAds = () => {
     const adContainer = document.getElementById('ad-container');
@@ -80,12 +87,11 @@ const showAds = () => {
         adContainer.innerHTML = `
             <div class="w-full my-4 p-4 bg-gray-100 border border-gray-300 rounded-lg text-center">
                 <p class="text-sm text-gray-600">【広告】Standardプランにアップグレードして、この広告を非表示にしましょう！</p>
-                </div>
+            </div>
         `;
         adContainer.classList.remove('hidden');
     }
 };
-
 
 /**
  * サイドバーメニューの開閉ロジック
@@ -187,7 +193,6 @@ const setupNotificationPanel = () => {
         if (notification) {
             modalTitle.textContent = notification.title;
             modalDate.textContent = notification.createdAt.toDate().toLocaleDateString('ja-JP');
-            // contentをHTMLとして解釈させることでリンクを有効化
             modalContent.innerHTML = notification.content || '詳細な内容はありません。';
             detailModal.classList.remove('hidden');
         }
@@ -202,41 +207,51 @@ const setupNotificationPanel = () => {
 
 /**
  * 現在のURLに応じてページ固有のスクリプトを読み込む
- * @param {object} user ログインユーザーオブジェクト
+ * @param {object | null} user ログインユーザーオブジェクトまたはnull
  */
 const loadPageScript = (user) => {
     const path = window.location.pathname.replace(/^\/|\.html$/g, '') || 'index';
+
+    // ログインしていないユーザーをログインページにリダイレクトする
+    if (!user) {
+        const publicPages = ['login', 'signup', 'lp', 'terms', 'privacy', 'contact'];
+        if (!publicPages.includes(path)) {
+            window.location.href = '/login.html';
+            return;
+        }
+    }
+
     switch (path) {
-        case 'index': 
-            import('./home.js').then(m => m.initHomePage(user)); 
+        case 'index':
+        case '': // ルートパスの場合
+            import('./home.js').then(m => m.initHomePage(user)).catch(e => console.error("home.jsの読み込みに失敗", e));
             break;
-        case 'projects': 
-            import('./projects.js').then(m => m.initProjectsPage(user)); 
+        case 'projects':
+            import('./projects.js').then(m => m.initProjectsPage(user)).catch(e => console.error("projects.jsの読み込みに失敗", e));
             break;
-        // ▼▼▼ ここから変更 ▼▼▼
-        case 'clients': // clients.html用のケースを追加
-            import('./clients.js').then(m => m.initClientsPage(user));
+        case 'clients':
+            import('./clients.js').then(m => m.initClientsPage(user)).catch(e => console.error("clients.jsの読み込みに失敗", e));
             break;
-        // ▲▲▲ ここまで ▲▲▲
-        case 'summary': 
-            import('./summary.js').then(m => m.initSummaryPage(user)); 
+        case 'summary':
+            import('./summary.js').then(m => m.initSummaryPage(user)).catch(e => console.error("summary.jsの読み込みに失敗", e));
             break;
-        case 'profile': 
-            import('./profile.js').then(m => m.initProfilePage(user)); 
+        case 'profile':
+            import('./profile.js').then(m => m.initProfilePage(user)).catch(e => console.error("profile.jsの読み込みに失敗", e));
             break;
-        case 'calendar': 
-            import('./calendar.js').then(m => m.initCalendarPage(user)); 
+        case 'calendar':
+            import('./calendar.js').then(m => m.initCalendarPage(user)).catch(e => console.error("calendar.jsの読み込みに失敗", e));
             break;
-        case 'login': 
-            import('./auth/login.js').then(m => m.initLoginPage()); 
+        case 'admin':
+            import('./admin.js').then(m => m.initAdminPage(user)).catch(e => console.error("admin.jsの読み込みに失敗", e));
             break;
-        case 'signup': 
-            import('./auth/signup.js').then(m => m.initSignupPage()); 
+        case 'login':
+            import('./auth/login.js').then(m => m.initLoginPage()).catch(e => console.error("login.jsの読み込みに失敗", e));
             break;
-        case 'admin': 
-            import('./admin.js').then(m => m.initAdminPage(user)); 
+        case 'signup':
+            import('./auth/signup.js').then(m => m.initSignupPage()).catch(e => console.error("signup.jsの読み込みに失敗", e));
             break;
     }
 };
 
-document.addEventListener('DOMContentLoaded', initializePage);
+// DOMの読み込みが完了したら、新しい初期化処理を開始
+document.addEventListener('DOMContentLoaded', main);
