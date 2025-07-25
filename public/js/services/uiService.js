@@ -160,8 +160,22 @@ export const setupModalClosers = (modalId) => {
     const modal = document.getElementById(modalId);
     if (!modal) return;
 
-    const closers = modal.querySelectorAll('.modal-overlay, .modal-cancel-button');
-    closers.forEach(closer => {
-        closer.addEventListener('click', () => closeModal(modalId));
+    // ▼▼▼ 【修正】新しいUIの閉じるボタン（.modal-close-btn）に対応 ▼▼▼
+    const closeButton = modal.querySelector('.modal-close-btn');
+    if (closeButton) {
+        closeButton.addEventListener('click', () => closeModal(modalId));
+    }
+
+    // 背景（モーダル要素自身）のクリックで閉じるイベントを追加
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal(modalId);
+        }
     });
+    
+    // 古いUIのための後方互換性
+    const oldCancelButton = modal.querySelector('.modal-cancel-button');
+    if (oldCancelButton) {
+        oldCancelButton.addEventListener('click', () => closeModal(modalId));
+    }
 };

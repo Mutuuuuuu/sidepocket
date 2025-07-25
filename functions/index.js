@@ -53,8 +53,10 @@ exports.generateUserReferralCode = onDocumentCreated("users/{userId}", async (ev
 
 
 // --- Callable Functions ---
+// ▼▼▼【修正】全ての onCall から { cors: true } を削除 ▼▼▼
+
 // 招待コードを適用し、特典を付与する
-exports.applyReferralCode = onCall({ cors: true }, async (request) => {
+exports.applyReferralCode = onCall(async (request) => {
     if (!request.auth) {
         throw new HttpsError("unauthenticated", "この操作には認証が必要です。");
     }
@@ -81,7 +83,6 @@ exports.applyReferralCode = onCall({ cors: true }, async (request) => {
         throw new HttpsError("failed-precondition", "Standardプランのユーザーは招待コードを使用できません。");
     }
 
-    // ▼▼▼ 【修正点】Firestoreへの問い合わせを正しい形式に統一 ▼▼▼
     const usersCollection = collection(db, "users");
     const referrerQuery = query(usersCollection, where("referralCode", "==", referredByCode.toUpperCase()));
     const referrerSnapshot = await getDocs(referrerQuery);
@@ -170,7 +171,7 @@ exports.sendContactForm = onRequest(async (req, res) => {
 });
 
 // --- お問い合わせ一覧取得機能 (管理者用) ---
-exports.getContacts = onCall({ cors: true }, async (request) => {
+exports.getContacts = onCall(async (request) => {
     if (!request.auth || !request.auth.token.isAdmin) {
         throw new HttpsError("permission-denied", "管理者権限が必要です。");
     }
@@ -186,7 +187,7 @@ exports.getContacts = onCall({ cors: true }, async (request) => {
 });
 
 // --- お問い合わせステータス更新機能 (管理者用) ---
-exports.updateContactStatus = onCall({ cors: true }, async (request) => {
+exports.updateContactStatus = onCall(async (request) => {
     if (!request.auth || !request.auth.token.isAdmin) {
         throw new HttpsError("permission-denied", "管理者権限が必要です。");
     }
@@ -220,7 +221,7 @@ exports.updateContactStatus = onCall({ cors: true }, async (request) => {
 });
 
 // --- Stripe Checkoutセッションを作成する ---
-exports.createCheckoutSession = onCall({ cors: true }, async (request) => {
+exports.createCheckoutSession = onCall(async (request) => {
     if (!request.auth) {
         throw new HttpsError("unauthenticated", "この操作には認証が必要です。");
     }
@@ -298,42 +299,80 @@ exports.stripeWebhook = onRequest({ cors: true }, async (req, res) => {
 });
 
 // --- Google Calendar連携 ---
-exports.getCalendarEvents = onCall({ cors: true }, async (request) => {
+exports.getCalendarList = onCall(async (request) => {
   if (!googleapis) {
     googleapis = require("googleapis");
   }
   const { google } = googleapis;
-  const { tokens, startDate, endDate } = request.data;
+  const { tokens } = request.data;
   if (!tokens) {
-    logger.error("No authentication tokens provided.");
+    logger.error("No authentication tokens provided for getCalendarList.");
     throw new HttpsError("unauthenticated", "認証トークンがありません。");
   }
+
   const oauth2Client = new google.auth.OAuth2();
   oauth2Client.setCredentials(tokens);
+
   const calendar = google.calendar({ version: "v3", auth: oauth2Client });
   try {
+    const response = await calendar.calendarList.list();
+    const calendars = response.data.items.map((cal) => ({
+      id: cal.id,
+      summary: cal.summary,
+      primary: cal.primary || false,
+    }));
+    return { calendars };
+  } catch (error) {
+    logger.error("Error fetching calendar list:", error.message);
+    throw new HttpsError("internal", "カレンダーリストの取得に失敗しました。");
+  }
+});
+
+exports.getCalendarEvents = onCall(async (request) => {
+  if (!googleapis) googleapis = require("googleapis");
+  const { google } = googleapis;
+
+  const { tokens, startDate, endDate, calendarId } = request.data;
+  if (!tokens) {
+    logger.error("getCalendarEvents call missing 'tokens'");
+    throw new HttpsError("unauthenticated", "認証トークンがありません。");
+  }
+  if (!calendarId) {
+    logger.error("getCalendarEvents call missing 'calendarId'");
+    throw new HttpsError("invalid-argument", "カレンダーIDが指定されていません。");
+  }
+
+  const { client_id, client_secret } = functions.config().googleapis;
+  if (!client_id || !client_secret) {
+      logger.error("Google API client_id or client_secret not configured in Firebase Functions.");
+      throw new HttpsError("failed-precondition", "サーバー設定に不備があります。");
+  }
+  const oauth2Client = new google.auth.OAuth2(client_id, client_secret);
+  oauth2Client.setCredentials(tokens);
+
+  const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+  try {
+    logger.info(`Fetching events for calendarId: ${calendarId}`);
     const response = await calendar.events.list({
-      calendarId: "primary",
-      timeMin: new Date(startDate).toISOString(),
-      timeMax: new Date(endDate).toISOString(),
+      calendarId: calendarId, // 受け取ったIDを使用
+      timeMin: startDate,
+      timeMax: endDate,
       singleEvents: true,
       orderBy: "startTime",
     });
-    const events = response.data.items.map((event) => ({
-      id: event.id,
-      summary: event.summary,
-      start: event.start.dateTime || event.start.date,
-      end: event.end.dateTime || event.end.date,
-    }));
-    return { events };
+    return { events: response.data.items.map(e => ({ id: e.id, summary: e.summary, start: e.start.dateTime || e.start.date, end: e.end.dateTime || e.end.date })) };
   } catch (error) {
-    logger.error("Error fetching calendar events:", error.message, error.stack);
-    throw new HttpsError("internal", "カレンダーの予定取得に失敗しました。");
+    logger.error("Google Calendar API Error in getCalendarEvents:", {
+        message: error.message,
+        code: error.code,
+        errors: error.errors,
+    });
+    throw new HttpsError("internal", `カレンダー「${calendarId}」の予定取得に失敗しました。アクセス権限を確認してください。`);
   }
 });
 
 // --- 全ユーザーの取得 ---
-exports.getAllUsers = onCall({ cors: true }, async (request) => {
+exports.getAllUsers = onCall(async (request) => {
   if (!request.auth || !request.auth.token.isAdmin) {
     throw new HttpsError("permission-denied", "この操作を実行するには管理者権限が必要です。");
   }
@@ -361,7 +400,7 @@ exports.getAllUsers = onCall({ cors: true }, async (request) => {
 });
 
 // --- ユーザー詳細の取得 ---
-exports.getUserDetails = onCall({ cors: true }, async (request) => {
+exports.getUserDetails = onCall(async (request) => {
     if (!request.auth || !request.auth.token.isAdmin) {
         throw new HttpsError("permission-denied", "この操作を実行するには管理者権限が必要です。");
     }
@@ -389,7 +428,7 @@ exports.getUserDetails = onCall({ cors: true }, async (request) => {
 
 
 // --- 管理者権限の設定 ---
-exports.setUserAdminRole = onCall({ cors: true }, async (request) => {
+exports.setUserAdminRole = onCall(async (request) => {
   if (!request.auth || !request.auth.token.isAdmin) {
     throw new HttpsError("permission-denied", "この操作を実行するには管理者権限が必要です。");
   }
@@ -407,7 +446,7 @@ exports.setUserAdminRole = onCall({ cors: true }, async (request) => {
 });
 
 // --- 会員プランの設定 ---
-exports.setUserPlan = onCall({ cors: true }, async (request) => {
+exports.setUserPlan = onCall(async (request) => {
     if (!request.auth || !request.auth.token.isAdmin) {
       throw new HttpsError("permission-denied", "この操作を実行するには管理者権限が必要です。");
     }
@@ -426,7 +465,7 @@ exports.setUserPlan = onCall({ cors: true }, async (request) => {
 
 
 // --- ダッシュボード分析データ取得 ---
-exports.getDashboardAnalytics = onCall({ cors: true }, async (request) => {
+exports.getDashboardAnalytics = onCall(async (request) => {
     if (!request.auth || !request.auth.token.isAdmin) {
         throw new HttpsError("permission-denied", "管理者権限が必要です。");
     }

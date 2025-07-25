@@ -80,8 +80,7 @@ const showAds = () => {
         adContainer.innerHTML = `
             <div class="w-full my-4 p-4 bg-gray-100 border border-gray-300 rounded-lg text-center">
                 <p class="text-sm text-gray-600">【広告】Standardプランにアップグレードして、この広告を非表示にしましょう！</p>
-                <!-- ここに実際の広告配信タグを挿入します -->
-            </div>
+                </div>
         `;
         adContainer.classList.remove('hidden');
     }
@@ -223,6 +222,11 @@ const loadPageScript = (user) => {
         case 'calendar': 
             import('./calendar.js').then(m => m.initCalendarPage(user)); 
             break;
+        // ▼▼▼ 【ここから修正】 ▼▼▼
+        case 'clients': 
+            import('./clients.js').then(m => m.initClientsPage(user)); 
+            break;
+        // ▲▲▲ 【ここまで修正】 ▲▲▲
         case 'login': 
             import('./auth/login.js').then(m => m.initLoginPage()); 
             break;

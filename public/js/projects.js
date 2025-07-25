@@ -17,7 +17,6 @@ const domElements = {};
 
 let currentSort = { key: 'name', direction: 'asc' };
 
-// ▼▼▼ 【修正点1】 'open-add-project-modal' を要素IDのリストに追加 ▼▼▼
 const elementIds = [
     'projects-table-body', 'project-modal', 'project-form', 'modal-title', 'status-filter',
     'project-id', 'project-name', 'project-code', 'project-is-active', 'is-active-label',
@@ -26,7 +25,6 @@ const elementIds = [
     'monthly-min-hours', 'monthly-max-hours', 'project-client', 'open-add-project-modal'
 ];
 
-const getContractTypeName = (type) => ({ hourly: '時間単価', monthly: '月額固定' }[type] || '未設定');
 const getCalculationMethodName = (method) => ({ floor: '切り捨て', round: '四捨五入', ceil: '切り上げ' }[method] || '未設定');
 const formatYen = (amount) => `¥${Number(amount || 0).toLocaleString()}`;
 
@@ -54,7 +52,6 @@ export const initProjectsPage = async (user) => {
     
     elementIds.forEach(id => { domElements[id] = document.getElementById(id); });
     
-    // ▼▼▼ 【修正点2】 処理が中断されないように、ボタンやテーブルの存在を個別に確認してイベントを設定 ▼▼▼
     if (!domElements['projects-table-body'] || !domElements['open-add-project-modal']) {
         console.error("必要なUI要素が見つからないため、プロジェクトページの初期化に失敗しました。");
         return;
@@ -68,12 +65,13 @@ export const initProjectsPage = async (user) => {
     }
 
     domElements['open-add-project-modal'].addEventListener('click', () => openProjectModal());
-    document.querySelector('thead').addEventListener('click', handleSortClick);
-    domElements['project-form'].addEventListener('submit', handleFormSubmit);
-    domElements['projects-table-body'].addEventListener('click', handleTableClick);
-    domElements['status-filter'].addEventListener('change', listenForProjects);
-    domElements['project-is-active'].addEventListener('change', updateIsActiveLabel);
+    document.querySelector('thead')?.addEventListener('click', handleSortClick);
+    domElements['project-form']?.addEventListener('submit', handleFormSubmit);
+    domElements['projects-table-body']?.addEventListener('click', handleTableClick);
+    domElements['status-filter']?.addEventListener('change', listenForProjects);
+    domElements['project-is-active']?.addEventListener('change', updateIsActiveLabel);
     
+    // setupModalClosersをuiServiceからインポートして使用
     setupModalClosers('project-modal');
     listenForProjects();
 };
@@ -134,24 +132,26 @@ const renderProjects = () => {
         detailsRow.className = 'project-details hidden bg-gray-50';
         detailsRow.dataset.detailsFor = project.id;
         detailsRow.innerHTML = `<td colspan="4" class="p-6 border-b">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
-                <div>
-                    <h4 class="font-bold text-gray-800 mb-2">契約・報酬設定</h4>
-                    <dl class="grid grid-cols-2 gap-y-1">${getRateDetails(project)}</dl>
+            <div style="width: 100%;">
+                <div class="flex flex-col md:flex-row md:space-x-8 text-sm">
+                    <div class="flex-1 mb-4 md:mb-0">
+                        <h4 class="font-bold text-gray-800 mb-2">契約・報酬設定</h4>
+                        <dl class="grid grid-cols-2 gap-y-1 gap-x-4">${getRateDetails(project)}</dl>
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-bold text-gray-800 mb-2">契約・清算ルール</h4>
+                        <dl class="grid grid-cols-2 gap-y-1 gap-x-4">
+                            <dt class="font-medium text-gray-500">契約開始日</dt><dd class="text-gray-900">${project.billingStartDate || '未設定'}</dd>
+                            <dt class="font-medium text-gray-500">契約終了日</dt><dd class="text-gray-900">${project.billingEndDate || '未設定'}</dd>
+                            <dt class="font-medium text-gray-500">稼働単位</dt><dd class="text-gray-900">${project.billingCycle} 分</dd>
+                            <dt class="font-medium text-gray-500">端数処理</dt><dd class="text-gray-900">${getCalculationMethodName(project.calculationMethod)}</dd>
+                        </dl>
+                    </div>
                 </div>
-                <div>
-                    <h4 class="font-bold text-gray-800 mb-2">契約・清算ルール</h4>
-                    <dl class="grid grid-cols-2 gap-y-1">
-                        <dt class="font-medium text-gray-500">契約開始日</dt><dd class="text-gray-900">${project.billingStartDate || '未設定'}</dd>
-                        <dt class="font-medium text-gray-500">契約終了日</dt><dd class="text-gray-900">${project.billingEndDate || '未設定'}</dd>
-                        <dt class="font-medium text-gray-500">稼働単位</dt><dd class="text-gray-900">${project.billingCycle} 分</dd>
-                        <dt class="font-medium text-gray-500">端数処理</dt><dd class="text-gray-900">${getCalculationMethodName(project.calculationMethod)}</dd>
-                    </dl>
+                <div class="flex justify-end items-center mt-6 space-x-2">
+                    <button class="edit-btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm text-sm" data-id="${project.id}">編集</button>
+                    <button class="delete-btn bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm text-sm" data-id="${project.id}">削除</button>
                 </div>
-            </div>
-            <div class="text-right mt-6">
-                <button class="edit-btn bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg shadow-sm" data-id="${project.id}">編集</button>
-                <button class="delete-btn bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-sm ml-2" data-id="${project.id}">削除</button>
             </div>
         </td>`;
 
@@ -177,6 +177,7 @@ const handleSortClick = (e) => {
 const updateSortHeaders = () => {
     document.querySelectorAll('th[data-sort-by]').forEach(th => {
         const indicator = th.querySelector('.sort-indicator');
+        if (!indicator) return;
         th.classList.remove('sort-asc', 'sort-desc');
         indicator.textContent = '';
         if (th.dataset.sortBy === currentSort.key) {
@@ -226,7 +227,7 @@ const openProjectModal = (project = null) => {
         form.calculationMethod.value = 'floor';
     }
     updateIsActiveLabel();
-    openModal(domElements['project-modal']);
+    openModal('project-modal');
 };
 
 const handleFormSubmit = async (e) => {
@@ -273,7 +274,7 @@ const handleFormSubmit = async (e) => {
             await addProject(currentUser.uid, projectData);
             showStatus('プロジェクトを追加しました。', false);
         }
-        closeModal(domElements['project-modal']);
+        closeModal('project-modal');
     } catch (error) {
         showStatus(error.message, true);
     } finally {
