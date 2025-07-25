@@ -5,10 +5,7 @@ import { httpsCallable } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 
 const functions = getFirebaseServices().functions;
 const createCheckoutSession = httpsCallable(functions, 'createCheckoutSession');
-const applyReferralCode = httpsCallable(functions, 'applyReferralCode'); // 追加
-
-// StripeのPrice ID (今回は利用しない)
-// const MONTHLY_PLAN_PRICE_ID = 'price_xxxxxxxxxxxxxxxxx';
+const applyReferralCode = httpsCallable(functions, 'applyReferralCode');
 
 export const initProfilePage = async (user) => {
     if (!user) {
@@ -16,9 +13,11 @@ export const initProfilePage = async (user) => {
         return;
     }
 
-    // DOM要素の取得
+    // --- 姓・名のDOM要素を取得 ---
     const profileForm = document.getElementById('profile-form');
     const displayNameInput = document.getElementById('display-name-input');
+    const lastNameInput = document.getElementById('last-name-input'); // 姓のinputを追加
+    const firstNameInput = document.getElementById('first-name-input'); // 名のinputを追加
     const userIconPreview = document.getElementById('user-icon-preview');
     const iconUploadInput = document.getElementById('icon-upload-input');
     const currentPlanEl = document.getElementById('current-plan');
@@ -28,8 +27,11 @@ export const initProfilePage = async (user) => {
     const planEndDateEl = document.getElementById('plan-end-date');
     const myReferralCodeEl = document.getElementById('my-referral-code');
     const copyReferralCodeBtn = document.getElementById('copy-referral-code');
-    const referralForm = document.getElementById('referral-form');
     const referralCodeInput = document.getElementById('referral-code-input');
+    
+    // 招待コード適用のボタンを取得
+    const applyReferralButton = document.getElementById('apply-referral-button');
+
 
     const loadUserProfile = async () => {
         toggleLoading(true);
@@ -37,8 +39,12 @@ export const initProfilePage = async (user) => {
             const userProfile = await getUserProfile(user.uid);
             if (userProfile) {
                 displayNameInput.value = userProfile.displayName || '';
-                userIconPreview.src = userProfile.photoURL || 'images/sidepocket_symbol.png';
+                // --- 姓・名の値を読み込む ---
+                lastNameInput.value = userProfile.lastName || '';
+                firstNameInput.value = userProfile.firstName || '';
                 
+                userIconPreview.src = userProfile.photoURL || 'images/sidepocket_symbol.png';
+
                 const plan = userProfile.plan || 'Free';
                 currentPlanEl.textContent = plan;
 
@@ -53,13 +59,14 @@ export const initProfilePage = async (user) => {
                     // upgradeButton.classList.remove('hidden'); // Stripe実装時に有効化
                 }
 
-                // 招待コードの表示
                 if (userProfile.referralCode) {
                     myReferralCodeEl.value = userProfile.referralCode;
                 }
-                // 既にコードを利用済みの場合はフォームを非表示
+                
+                // 招待コードのコンテナを取得
+                const referralFormContainer = document.getElementById('referral-form-container');
                 if (userProfile.referredBy) {
-                    referralForm.classList.add('hidden');
+                    referralFormContainer.classList.add('hidden');
                 }
             }
         } catch (error) {
@@ -76,9 +83,13 @@ export const initProfilePage = async (user) => {
         e.preventDefault();
         toggleLoading(true);
         try {
+            // --- 更新オブジェクトに姓・名を追加 ---
             const updatedProfile = {
                 displayName: displayNameInput.value,
+                lastName: lastNameInput.value,
+                firstName: firstNameInput.value,
             };
+
             if (iconUploadInput.files && iconUploadInput.files[0]) {
                 const file = iconUploadInput.files[0];
                 const photoURL = await uploadUserIcon(user.uid, file);
@@ -92,16 +103,15 @@ export const initProfilePage = async (user) => {
             toggleLoading(false);
         }
     });
-    
-    // ▼▼▼ 招待コード関連のイベントリスナー ▼▼▼
+
     copyReferralCodeBtn.addEventListener('click', () => {
         myReferralCodeEl.select();
         document.execCommand('copy');
         showStatus('招待コードをコピーしました！');
     });
 
-    referralForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
+    // --- 招待コード適用ボタンのイベントリスナー修正 ---
+    applyReferralButton.addEventListener('click', async () => {
         const code = referralCodeInput.value.trim();
         if (!code) {
             showStatus('招待コードを入力してください。', true);
@@ -112,7 +122,7 @@ export const initProfilePage = async (user) => {
             const result = await applyReferralCode({ code: code });
             showStatus(result.data.message, false);
             referralCodeInput.value = '';
-            await loadUserProfile(); // プロフィール情報を再読み込みして表示を更新
+            await loadUserProfile();
         } catch (error) {
             showStatus(`エラー: ${error.message}`, true);
         } finally {
