@@ -3,6 +3,7 @@ const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onRequest } = require("firebase-functions/v2/https");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { logger } = require("firebase-functions/v2");
+const { defineSecret } = require("firebase-functions/params"); // ◀◀◀ 修正点
 const functions = require("firebase-functions"); // v1 for pubsub schedule
 const cors = require("cors")({ origin: true });
 
@@ -14,6 +15,12 @@ const { getFirestore, FieldValue, Timestamp, query, collection, where, getDocs }
 
 // Admin SDKを初期化
 initializeApp();
+
+// ▼▼▼ 修正点 ▼▼▼
+// 使用するSecretを定義
+const GOOGLE_CLIENT_ID = defineSecret("GOOGLE_CLIENT_ID");
+const GOOGLE_CLIENT_SECRET = defineSecret("GOOGLE_CLIENT_SECRET");
+// ▲▲▲ 修正点 ▲▲▲
 
 // Stripe SDKを初期化
 const stripe = require("stripe")("sk_test_YOUR_STRIPE_SECRET_KEY");
@@ -328,7 +335,8 @@ exports.getCalendarList = onCall(async (request) => {
   }
 });
 
-exports.getCalendarEvents = onCall(async (request) => {
+// ▼▼▼ 修正された関数 ▼▼▼
+exports.getCalendarEvents = onCall({ secrets: [GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET] }, async (request) => {
   if (!googleapis) googleapis = require("googleapis");
   const { google } = googleapis;
 
@@ -342,19 +350,21 @@ exports.getCalendarEvents = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "カレンダーIDが指定されていません。");
   }
 
-  const { client_id, client_secret } = functions.config().googleapis;
-  if (!client_id || !client_secret) {
+  const clientId = GOOGLE_CLIENT_ID.value();
+  const clientSecret = GOOGLE_CLIENT_SECRET.value();
+
+  if (!clientId || !clientSecret) {
       logger.error("Google API client_id or client_secret not configured in Firebase Functions.");
       throw new HttpsError("failed-precondition", "サーバー設定に不備があります。");
   }
-  const oauth2Client = new google.auth.OAuth2(client_id, client_secret);
+  const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
   oauth2Client.setCredentials(tokens);
 
   const calendar = google.calendar({ version: "v3", auth: oauth2Client });
   try {
     logger.info(`Fetching events for calendarId: ${calendarId}`);
     const response = await calendar.events.list({
-      calendarId: calendarId, // 受け取ったIDを使用
+      calendarId: calendarId,
       timeMin: startDate,
       timeMax: endDate,
       singleEvents: true,
@@ -370,6 +380,7 @@ exports.getCalendarEvents = onCall(async (request) => {
     throw new HttpsError("internal", `カレンダー「${calendarId}」の予定取得に失敗しました。アクセス権限を確認してください。`);
   }
 });
+// ▲▲▲ 修正された関数 ▲▲▲
 
 // --- 全ユーザーの取得 ---
 exports.getAllUsers = onCall(async (request) => {
