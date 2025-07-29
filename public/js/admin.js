@@ -13,6 +13,7 @@ const getDashboardAnalytics = httpsCallable(functions, 'getDashboardAnalytics');
 const setUserPlan = httpsCallable(functions, 'setUserPlan');
 const getContacts = httpsCallable(functions, 'getContacts');
 const updateContactStatus = httpsCallable(functions, 'updateContactStatus');
+const createCouponCode = httpsCallable(functions, 'createCouponCode');
 
 let allUsers = [];
 let userChart = null;
@@ -75,6 +76,7 @@ export const initAdminPage = async (user) => {
         await setupContacts();
         setupNotifications();
         await setupUsers();
+        setupCoupons();
         setupUserDetailModal();
     } catch (error) {
         console.error("管理者ページの初期化に失敗しました:", error);
@@ -593,4 +595,35 @@ const setupContacts = async () => {
         showStatus("お問い合わせの読み込みに失敗しました。", true);
         listBody.innerHTML = `<tr><td colspan="7" class="text-center p-8 text-red-500">エラー: ${error.message}</td></tr>`;
     }
+};
+
+const setupCoupons = () => {
+    const form = document.getElementById('coupon-form');
+    if (!form) return;
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = {
+            code: form.code.value.trim(),
+            durationDays: parseInt(form.duration.value, 10),
+            expiresAt: form.expires.value || null,
+            maxUses: parseInt(form.maxUses.value, 10) || null,
+        };
+
+        if (!data.code || !data.durationDays) {
+            showStatus('クーポンコードと特典日数は必須です。', true);
+            return;
+        }
+
+        toggleLoading(true);
+        try {
+            const result = await createCouponCode(data);
+            showStatus(result.data.message, false);
+            form.reset();
+        } catch (error) {
+            showStatus(`エラー: ${error.message}`, true);
+        } finally {
+            toggleLoading(false);
+        }
+    });
 };

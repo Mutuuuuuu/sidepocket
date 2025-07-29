@@ -5,15 +5,35 @@ service cloud.firestore {
 
     // ユーザーのプロフィール情報 (/users/{userId})
     match /users/{userId} {
-      // 読み取りは、認証済みのユーザーなら誰でも許可
+      // 読み取りは認証済みのユーザーなら誰でも許可
       allow read: if request.auth != null;
-
       // 新規作成は認証済みのユーザーなら誰でも許可
       allow create: if request.auth != null;
+      // 更新は、自分自身のみ許可。ただし、プラン関連の重要なフィールドは直接変更させない
+      allow update: if request.auth != null && request.auth.uid == userId
+                    && !("plan" in request.resource.data)
+                    && !("planStartDate" in request.resource.data)
+                    && !("planEndDate" in request.resource.data)
+                    && !("invitationCode" in request.resource.data)
+                    && !("usedInvitationCode" in request.resource.data);
+    }
 
-      // 更新は、自分自身のみ許可
-      // 招待コード機能で追加されたフィールドも更新できるようにする
-      allow update: if request.auth != null && request.auth.uid == userId;
+    // 招待コード/クーポンコード情報 (/codes/{codeId})
+    match /codes/{codeId} {
+      // 読み取りは認証済みユーザーなら誰でも可能（コードの存在チェックのため）
+      allow get: if request.auth != null;
+      // リスト表示はさせない
+      allow list: if false;
+      // 書き込みは管理者のみ許可
+      allow write: if request.auth != null && request.auth.token.isAdmin == true;
+    }
+
+    // ユーザーごとのコード使用履歴
+    match /users/{userId}/codeUsageHistory/{historyId} {
+      // 自分の履歴のみ読み取り可能
+      allow read: if request.auth != null && request.auth.uid == userId;
+      // 書き込みはクライアントからは不可（Functions経由のみ）
+      allow write: if false;
     }
 
     // ユーザーのサブコレクション (projects, timestamps, clients など)

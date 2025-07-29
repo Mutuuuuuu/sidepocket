@@ -41,6 +41,20 @@ export const getUserDetails = async (uid) => {
     return { profile: userProfile, projects, timestamps };
 };
 
+// === Code Usage History ===
+/**
+ * ユーザーのコード利用履歴を取得する
+ * @param {string} uid ユーザーID
+ * @param {number} historyLimit 取得する履歴の件数
+ */
+export const getCodeUsageHistory = async (uid, historyLimit) => {
+    const historyCol = collection(db(), `users/${uid}/codeUsageHistory`);
+    const q = query(historyCol, orderBy('usedAt', 'desc'), limit(historyLimit));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+
 // === Projects ===
 export const getProjects = (uid, status, callback) => {
     let q = query(collection(db(), 'users', uid, 'projects'));
@@ -94,15 +108,12 @@ export const clockIn = (uid, proj) => {
     return addDoc(collection(db(), 'users', uid, 'timestamps'), { project: proj, clockInTime: serverTimestamp(), clockOutTime: null, status: 'active' });
 };
 
-// ▼▼▼ この関数を修正 ▼▼▼
 export const clockOut = (uid, docId) => {
-    // 既存ドキュメントの一部を更新するため、setDocではなくupdateDocを使用します。
     return updateDoc(doc(db(), 'users', uid, 'timestamps', docId), { 
         clockOutTime: serverTimestamp(), 
         status: 'completed' 
     });
 };
-// ▲▲▲ ここまで修正 ▲▲▲
 
 export const getTimestampsForPeriod = async (uid, start, end) => {
     const q = query(collection(db(), 'users', uid, 'timestamps'), where('status', '==', 'completed'), where('clockInTime', '>=', start), where('clockInTime', '<', end));

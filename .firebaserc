@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "side-pocket-sls"
+    "default": "side-pocket-sls",
+    "production": "side-pocket-sls", // 本番環境のエイリアス
+    "development": "side-pocket-dev"  // 開発環境のエイリアス
   }
 }

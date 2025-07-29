@@ -3,33 +3,31 @@ const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onRequest } = require("firebase-functions/v2/https");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { logger } = require("firebase-functions/v2");
-const { defineSecret } = require("firebase-functions/params"); // ◀◀◀ 修正点
+const { defineSecret } = require("firebase-functions/params");
 const functions = require("firebase-functions"); // v1 for pubsub schedule
 const cors = require("cors")({ origin: true });
 
 // Firebase Admin SDKモジュールをインポート
 const { initializeApp } = require("firebase-admin/app");
 const { getAuth } = require("firebase-admin/auth");
-// Firestoreのモジュールを正しくインポート
-const { getFirestore, FieldValue, Timestamp, query, collection, where, getDocs } = require("firebase-admin/firestore");
+const { getFirestore, FieldValue, Timestamp, runTransaction } = require("firebase-admin/firestore");
 
 // Admin SDKを初期化
 initializeApp();
 
-// ▼▼▼ 修正点 ▼▼▼
 // 使用するSecretを定義
 const GOOGLE_CLIENT_ID = defineSecret("GOOGLE_CLIENT_ID");
 const GOOGLE_CLIENT_SECRET = defineSecret("GOOGLE_CLIENT_SECRET");
-// ▲▲▲ 修正点 ▲▲▲
-
-// Stripe SDKを初期化
-const stripe = require("stripe")("sk_test_YOUR_STRIPE_SECRET_KEY");
+/*const STRIPE_SECRET_KEY = defineSecret("STRIPE_SECRET_KEY");
+const STRIPE_WEBHOOK_SECRET = defineSecret("STRIPE_WEBHOOK_SECRET");*/
 
 // googleapisは初回利用時に遅延読み込み
 let googleapis;
 
 /**
  * ランダムな英数字の招待コードを生成するヘルパー関数
+ * @param {number} length - 生成するコードの長さ
+ * @returns {string} 生成されたコード
  */
 const generateReferralCode = (length = 8) => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -42,108 +40,211 @@ const generateReferralCode = (length = 8) => {
 
 
 // --- Firestore Triggers ---
-// 新規ユーザーがFirestoreに作成された時に招待コードを自動生成する
-exports.generateUserReferralCode = onDocumentCreated("users/{userId}", async (event) => {
+
+/**
+ * 新規ユーザーがAuthに作成された後、Firestoreドキュメントが作成されるのをトリガーに実行
+ * ユーザーの初期プラン設定と、ユニークな招待コードの発行を行う
+ */
+exports.onUserCreate = onDocumentCreated("users/{userId}", async (event) => {
     const userDocRef = event.data.ref;
-    const referralCode = generateReferralCode();
+    const userId = event.params.userId;
+    const db = getFirestore();
+    const batch = db.batch();
+
+    // 1. ユーザー情報に初期値を設定
+    const invitationCode = generateReferralCode();
+    batch.update(userDocRef, {
+        plan: "Free",
+        planStartDate: null,
+        planEndDate: null,
+        invitationCode: invitationCode,
+        autoRenew: false,
+        usedInvitationCode: false,
+        stripeCustomerId: null,
+    });
+    logger.info(`Initialized user profile for ${userId}`);
+
+    // 2. 招待コードをcodesコレクションに登録
+    const codeDocRef = db.collection("codes").doc(invitationCode);
+    batch.set(codeDocRef, {
+        code: invitationCode,
+        type: "invitation",
+        ownerUid: userId,
+        isActive: true,
+        createdAt: FieldValue.serverTimestamp(),
+        expiresAt: null,
+        maxUses: null,
+        useCount: 0,
+        benefit: {
+            type: "PLAN_EXTENSION",
+            durationDays: 30, // 被招待者の特典日数
+        },
+    });
+    logger.info(`Generated invitation code ${invitationCode} for user ${userId}`);
+
     try {
-        await userDocRef.update({
-            referralCode: referralCode,
-            plan: "Free", // 初期プランをFreeに設定
-            referredUsers: [], // 紹介したユーザーリストを初期化
-        });
-        logger.info(`Generated referral code ${referralCode} for user ${event.params.userId}`);
+        await batch.commit();
     } catch (error) {
-        logger.error(`Error generating referral code for user ${event.params.userId}:`, error);
+        logger.error(`Error during user initialization for ${userId}:`, error);
     }
 });
 
 
 // --- Callable Functions ---
-// ▼▼▼【修正】全ての onCall から { cors: true } を削除 ▼▼▼
 
-// 招待コードを適用し、特典を付与する
-exports.applyReferralCode = onCall(async (request) => {
+/**
+ * 招待コード/クーポンコードを適用する
+ */
+exports.applyCode = onCall(async (request) => {
     if (!request.auth) {
         throw new HttpsError("unauthenticated", "この操作には認証が必要です。");
     }
 
-    const referredByCode = request.data.code;
-    if (!referredByCode || typeof referredByCode !== 'string') {
-        throw new HttpsError("invalid-argument", "招待コードが正しくありません。");
+    const code = request.data.code?.toUpperCase();
+    if (!code || typeof code !== "string") {
+        throw new HttpsError("invalid-argument", "コードを正しく入力してください。");
     }
 
     const refereeId = request.auth.uid;
     const db = getFirestore();
 
-    const refereeDocRef = db.collection("users").doc(refereeId);
-    const refereeDoc = await refereeDocRef.get();
-    const refereeData = refereeDoc.data();
+    try {
+        const resultMessage = await runTransaction(db, async (transaction) => {
+            const codeDocRef = db.collection("codes").doc(code);
+            const refereeDocRef = db.collection("users").doc(refereeId);
+            const historyRef = db.collection("users").doc(refereeId).collection("codeUsageHistory");
 
-    if (!refereeData) {
-         throw new HttpsError("not-found", "ユーザー情報が見つかりません。");
+            const [codeDoc, refereeDoc] = await Promise.all([
+                transaction.get(codeDocRef),
+                transaction.get(refereeDocRef),
+            ]);
+
+            // --- バリデーション ---
+            if (!codeDoc.exists) throw new HttpsError("not-found", "このコードは存在しません。");
+            const codeData = codeDoc.data();
+            if (!codeData.isActive) throw new HttpsError("failed-precondition", "このコードは現在無効です。");
+            if (codeData.expiresAt && codeData.expiresAt.toDate() < new Date()) throw new HttpsError("failed-precondition", "このコードの有効期限は切れています。");
+            if (codeData.maxUses && codeData.useCount >= codeData.maxUses) throw new HttpsError("resource-exhausted", "このコードの利用上限に達しました。");
+
+            const refereeData = refereeDoc.data();
+            if (!refereeData) throw new HttpsError("not-found", "ユーザー情報が見つかりません。");
+
+            // --- 履歴チェック ---
+            const usageQuery = await historyRef.where("code", "==", code).get();
+            if (!usageQuery.empty) {
+                 throw new HttpsError("already-exists", "このコードは既に使用済みです。");
+            }
+
+            if (codeData.type === "invitation") {
+                if (codeData.ownerUid === refereeId) throw new HttpsError("invalid-argument", "自分の招待コードは使用できません。");
+                if (refereeData.usedInvitationCode) throw new HttpsError("already-exists", "招待コードは一度しか使用できません。");
+            }
+
+            // --- 特典適用処理 ---
+            const now = new Date();
+            const benefitDescription = `Standardプラン ${codeData.benefit.durationDays}日間`;
+
+            // 1. コード適用者（referee）のプランを更新
+            const refereeCurrentEndDate = refereeData.planEndDate ? refereeData.planEndDate.toDate() : now;
+            const refereeBaseDate = refereeCurrentEndDate > now ? refereeCurrentEndDate : now;
+            const refereeNewEndDate = new Date(refereeBaseDate);
+            refereeNewEndDate.setDate(refereeNewEndDate.getDate() + codeData.benefit.durationDays);
+
+            const refereeUpdateData = {
+                plan: "Standard",
+                planStartDate: refereeData.planStartDate || Timestamp.fromDate(now),
+                planEndDate: Timestamp.fromDate(refereeNewEndDate),
+            };
+            if (codeData.type === "invitation") {
+                refereeUpdateData.usedInvitationCode = true;
+            }
+            transaction.update(refereeDocRef, refereeUpdateData);
+
+            // 2. コード提供者（referrer）のプランを更新 (招待コードの場合のみ)
+            if (codeData.type === "invitation") {
+                const referrerDocRef = db.collection("users").doc(codeData.ownerUid);
+                const referrerDoc = await transaction.get(referrerDocRef);
+                const referrerData = referrerDoc.data();
+
+                const referrerCurrentEndDate = referrerData.planEndDate ? referrerData.planEndDate.toDate() : now;
+                const referrerBaseDate = referrerCurrentEndDate > now ? referrerCurrentEndDate : now;
+                const referrerNewEndDate = new Date(referrerBaseDate);
+                referrerNewEndDate.setDate(referrerNewEndDate.getDate() + 60); // 招待者は60日間延長
+
+                transaction.update(referrerDocRef, {
+                    plan: "Standard",
+                    planStartDate: referrerData.planStartDate || Timestamp.fromDate(now),
+                    planEndDate: Timestamp.fromDate(referrerNewEndDate),
+                });
+                
+                 // 招待者の履歴にも記録
+                const referrerHistoryRef = db.collection("users").doc(codeData.ownerUid).collection("codeUsageHistory").doc();
+                transaction.set(referrerHistoryRef, {
+                    code, type: "invitation", action: "provided", usedAt: FieldValue.serverTimestamp(),
+                    appliedToUid: refereeId, providerUid: null, benefitDescription: "Standardプラン 60日間"
+                });
+            }
+
+            // 3. codesコレクションを更新
+            transaction.update(codeDocRef, { useCount: FieldValue.increment(1) });
+
+            // 4. 適用者の履歴を記録
+            const refereeHistoryRef = historyRef.doc();
+            transaction.set(refereeHistoryRef, {
+                code, type: codeData.type, action: "applied", usedAt: FieldValue.serverTimestamp(),
+                appliedToUid: null, providerUid: codeData.ownerUid || null, benefitDescription
+            });
+
+            return { success: true, message: `${benefitDescription}が適用されました！` };
+        });
+        return resultMessage;
+    } catch (error) {
+        logger.error("Error applying code:", { code, userId: refereeId, error });
+        if (error instanceof HttpsError) throw error;
+        throw new HttpsError("internal", "コードの適用中にエラーが発生しました。");
     }
-    if (refereeData.referredBy) {
-        throw new HttpsError("already-exists", "すでに招待コードを使用しています。");
-    }
-    if (refereeData.plan === 'Standard') {
-        throw new HttpsError("failed-precondition", "Standardプランのユーザーは招待コードを使用できません。");
-    }
+});
 
-    const usersCollection = collection(db, "users");
-    const referrerQuery = query(usersCollection, where("referralCode", "==", referredByCode.toUpperCase()));
-    const referrerSnapshot = await getDocs(referrerQuery);
-
-    if (referrerSnapshot.empty) {
-        throw new HttpsError("not-found", "この招待コードは存在しません。");
+/**
+ * クーポンコードを作成する (管理者用)
+ */
+exports.createCouponCode = onCall(async (request) => {
+    if (!request.auth || !request.auth.token.isAdmin) {
+        throw new HttpsError("permission-denied", "管理者権限が必要です。");
     }
 
-    const referrerDoc = referrerSnapshot.docs[0];
-    const referrerId = referrerDoc.id;
-
-    if (referrerId === refereeId) {
-        throw new HttpsError("invalid-argument", "自分の招待コードは使用できません。");
+    const { code, durationDays, expiresAt, maxUses } = request.data;
+    if (!code || !durationDays) {
+        throw new HttpsError("invalid-argument", "コードと特典日数は必須です。");
     }
 
-    const batch = db.batch();
-    const now = new Date();
+    const db = getFirestore();
+    const codeDocRef = db.collection("codes").doc(code.toUpperCase());
 
-    // 被紹介者への特典: 1ヶ月無料
-    const refereeEndDate = new Date(now);
-    refereeEndDate.setMonth(refereeEndDate.getMonth() + 1);
-    batch.update(refereeDocRef, {
-        referredBy: referrerId,
-        plan: "Standard",
-        planStartDate: Timestamp.fromDate(now),
-        planEndDate: Timestamp.fromDate(refereeEndDate),
-    });
-    logger.info(`Applied 1-month trial for referee: ${refereeId}`);
-
-
-    // 紹介者への特典: 2ヶ月延長
-    const referrerDocRef = referrerDoc.ref;
-    const referrerData = referrerDoc.data();
-    const currentEndDate = referrerData.planEndDate ? referrerData.planEndDate.toDate() : new Date();
-    const newStartDate = referrerData.planStartDate ? referrerData.planStartDate.toDate() : now;
-    const baseDateForExtension = currentEndDate > now ? currentEndDate : now;
-    
-    const newEndDate = new Date(baseDateForExtension);
-    newEndDate.setMonth(newEndDate.getMonth() + 2);
-
-    batch.update(referrerDocRef, {
-        referredUsers: FieldValue.arrayUnion(refereeId),
-        plan: "Standard",
-        planStartDate: Timestamp.fromDate(newStartDate),
-        planEndDate: Timestamp.fromDate(newEndDate),
-    });
-    logger.info(`Extended plan for 2 months for referrer: ${referrerId}`);
+    const doc = await codeDocRef.get();
+    if (doc.exists) {
+        throw new HttpsError("already-exists", "このクーポンコードは既に使用されています。");
+    }
 
     try {
-        await batch.commit();
-        return { success: true, message: "招待コードを適用しました！Standardプランが有効になりました。" };
+        await codeDocRef.set({
+            code: code.toUpperCase(),
+            type: "coupon",
+            ownerUid: null,
+            isActive: true,
+            createdAt: FieldValue.serverTimestamp(),
+            expiresAt: expiresAt ? Timestamp.fromDate(new Date(expiresAt)) : null,
+            maxUses: maxUses || null,
+            useCount: 0,
+            benefit: {
+                type: "PLAN_EXTENSION",
+                durationDays: Number(durationDays),
+            },
+        });
+        return { success: true, message: `クーポン「${code.toUpperCase()}」を作成しました。` };
     } catch (error) {
-        logger.error("Error applying referral code:", error);
-        throw new HttpsError("internal", "招待コードの適用中にエラーが発生しました。");
+        logger.error("Error creating coupon code:", error);
+        throw new HttpsError("internal", "クーポン作成中にエラーが発生しました。");
     }
 });
 
@@ -228,10 +329,15 @@ exports.updateContactStatus = onCall(async (request) => {
 });
 
 // --- Stripe Checkoutセッションを作成する ---
-exports.createCheckoutSession = onCall(async (request) => {
+/*
+exports.createCheckoutSession = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
     if (!request.auth) {
         throw new HttpsError("unauthenticated", "この操作には認証が必要です。");
     }
+
+    // ▼▼▼ 関数内でStripeを初期化 ▼▼▼
+    const stripe = require("stripe")(STRIPE_SECRET_KEY.value());
+    
     const uid = request.auth.uid;
     const { priceId, successUrl, cancelUrl } = request.data;
     try {
@@ -255,9 +361,12 @@ exports.createCheckoutSession = onCall(async (request) => {
 });
 
 // --- Stripe Webhookを処理する ---
-exports.stripeWebhook = onRequest({ cors: true }, async (req, res) => {
+exports.stripeWebhook = onRequest({ secrets: [STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET] }, async (req, res) => {
+    // ▼▼▼ 関数内でStripeを初期化 ▼▼▼
+    const stripe = require("stripe")(STRIPE_SECRET_KEY.value());
+
     const sig = req.headers["stripe-signature"];
-    const endpointSecret = "whsec_YOUR_STRIPE_WEBHOOK_SECRET";
+    const endpointSecret = STRIPE_WEBHOOK_SECRET.value();
     let event;
     try {
         event = stripe.webhooks.constructEvent(req.rawBody, sig, endpointSecret);
@@ -286,9 +395,9 @@ exports.stripeWebhook = onRequest({ cors: true }, async (req, res) => {
         }
         case "customer.subscription.deleted": {
             const subscription = event.data.object;
-            const usersCollection = collection(db, "users");
-            const userQuery = query(usersCollection, where("subscription.id", "==", subscription.id));
-            const userSnapshot = await getDocs(userQuery);
+            const usersCollection = db.collection("users");
+            const userQuery = usersCollection.where("subscription.id", "==", subscription.id);
+            const userSnapshot = await userQuery.get();
             if (!userSnapshot.empty) {
                 const userDoc = userSnapshot.docs[0];
                 await userDoc.ref.update({
@@ -304,9 +413,10 @@ exports.stripeWebhook = onRequest({ cors: true }, async (req, res) => {
     }
     res.json({ received: true });
 });
+*/
 
 // --- Google Calendar連携 ---
-exports.getCalendarList = onCall(async (request) => {
+exports.getCalendarList = onCall({ secrets: [GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET] }, async (request) => {
   if (!googleapis) {
     googleapis = require("googleapis");
   }
@@ -317,7 +427,10 @@ exports.getCalendarList = onCall(async (request) => {
     throw new HttpsError("unauthenticated", "認証トークンがありません。");
   }
 
-  const oauth2Client = new google.auth.OAuth2();
+  const oauth2Client = new google.auth.OAuth2(
+      GOOGLE_CLIENT_ID.value(),
+      GOOGLE_CLIENT_SECRET.value()
+  );
   oauth2Client.setCredentials(tokens);
 
   const calendar = google.calendar({ version: "v3", auth: oauth2Client });
@@ -335,7 +448,6 @@ exports.getCalendarList = onCall(async (request) => {
   }
 });
 
-// ▼▼▼ 修正された関数 ▼▼▼
 exports.getCalendarEvents = onCall({ secrets: [GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET] }, async (request) => {
   if (!googleapis) googleapis = require("googleapis");
   const { google } = googleapis;
@@ -350,14 +462,10 @@ exports.getCalendarEvents = onCall({ secrets: [GOOGLE_CLIENT_ID, GOOGLE_CLIENT_S
     throw new HttpsError("invalid-argument", "カレンダーIDが指定されていません。");
   }
 
-  const clientId = GOOGLE_CLIENT_ID.value();
-  const clientSecret = GOOGLE_CLIENT_SECRET.value();
-
-  if (!clientId || !clientSecret) {
-      logger.error("Google API client_id or client_secret not configured in Firebase Functions.");
-      throw new HttpsError("failed-precondition", "サーバー設定に不備があります。");
-  }
-  const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
+  const oauth2Client = new google.auth.OAuth2(
+      GOOGLE_CLIENT_ID.value(),
+      GOOGLE_CLIENT_SECRET.value()
+  );
   oauth2Client.setCredentials(tokens);
 
   const calendar = google.calendar({ version: "v3", auth: oauth2Client });
@@ -380,7 +488,6 @@ exports.getCalendarEvents = onCall({ secrets: [GOOGLE_CLIENT_ID, GOOGLE_CLIENT_S
     throw new HttpsError("internal", `カレンダー「${calendarId}」の予定取得に失敗しました。アクセス権限を確認してください。`);
   }
 });
-// ▲▲▲ 修正された関数 ▲▲▲
 
 // --- 全ユーザーの取得 ---
 exports.getAllUsers = onCall(async (request) => {
@@ -584,42 +691,44 @@ exports.getDashboardAnalytics = onCall(async (request) => {
 
 
 // --- スケジュールされた関数 ---
-// 毎日午前1時に実行し、プランの有効期限をチェックする
-exports.updateUserPlans = functions.region('asia-northeast1').pubsub.schedule("every day 01:00")
+/**
+ * 毎日午前3時に実行し、プランの有効期限をチェックする
+ */
+exports.scheduledPlanCheck = functions.region('asia-northeast1').pubsub.schedule("every day 03:00")
     .timeZone("Asia/Tokyo")
     .onRun(async (context) => {
         const db = getFirestore();
         const now = Timestamp.now();
-        const usersCollection = collection(db, "users");
-        
-        // Stripe管理下のユーザーは除外
-        const q = query(
-            usersCollection,
-            where("plan", "==", "Standard"),
-            where("planEndDate", "<=", now)
-        );
-        const snapshot = await getDocs(q);
-        
-        const expiredNonStripeUsers = snapshot.docs.filter(doc => doc.data().subscription?.provider !== 'stripe');
+        const usersRef = db.collection("users");
 
-        if (expiredNonStripeUsers.length === 0) {
-            logger.info("No expired Standard plan users (non-Stripe) found.");
+        const q = usersRef.where("plan", "==", "Standard").where("planEndDate", "<=", now);
+        const snapshot = await q.get();
+
+        if (snapshot.empty) {
+            logger.info("No expired Standard plan users found.");
             return null;
         }
 
         const batch = db.batch();
-        expiredNonStripeUsers.forEach(doc => {
-            logger.info(`Downgrading plan for user: ${doc.id} due to expiration.`);
-            batch.update(doc.ref, {
-                plan: "Free",
-                planStartDate: null,
-                planEndDate: null
-            });
+        snapshot.docs.forEach((doc) => {
+            const userData = doc.data();
+            // 将来の自動決済ロジックをここに追加
+            if (userData.autoRenew && userData.stripeCustomerId) {
+                // Stripe決済処理を呼び出す (今回は未実装)
+                logger.info(`Skipping downgrade for user with autoRenew: ${doc.id}`);
+            } else {
+                logger.info(`Downgrading plan for user: ${doc.id} due to expiration.`);
+                batch.update(doc.ref, {
+                    plan: "Free",
+                    planStartDate: null,
+                    planEndDate: null,
+                });
+            }
         });
 
         try {
             await batch.commit();
-            logger.info(`Successfully downgraded ${expiredNonStripeUsers.length} users.`);
+            logger.info(`Successfully processed ${snapshot.size} users.`);
         } catch (error) {
             logger.error("Error during plan downgrading cron job:", error);
         }

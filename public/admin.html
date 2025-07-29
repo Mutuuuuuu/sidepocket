@@ -37,6 +37,7 @@
                         <button data-tab="contacts" class="tab-button whitespace-nowrap py-4 px-4 border-b-2 font-medium text-sm">お問い合わせ管理</button>
                         <button data-tab="notifications" class="tab-button whitespace-nowrap py-4 px-4 border-b-2 font-medium text-sm">お知らせ管理</button>
                         <button data-tab="users" class="tab-button whitespace-nowrap py-4 px-4 border-b-2 font-medium text-sm">ユーザー管理</button>
+                        <button data-tab="coupons" class="tab-button whitespace-nowrap py-4 px-4 border-b-2 font-medium text-sm">クーポン管理</button>
                     </nav>
                 </div>
 
@@ -128,6 +129,32 @@
                                  </table>
                              </div>
                          </div>
+                    </div>
+                    <div id="coupons-content" class="tab-pane space-y-8">
+                        <form id="coupon-form" class="space-y-6 bg-white p-8 rounded-xl shadow-md">
+                            <h3 class="text-lg font-medium text-gray-900 border-b pb-2">クーポン新規発行</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="coupon-code" class="block text-sm font-medium text-gray-700">クーポンコード (英数字)</label>
+                                    <input type="text" id="coupon-code" name="code" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2">
+                                </div>
+                                <div>
+                                    <label for="coupon-duration" class="block text-sm font-medium text-gray-700">特典日数 (Standardプラン)</label>
+                                    <input type="number" id="coupon-duration" name="duration" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2" value="30">
+                                </div>
+                                <div>
+                                    <label for="coupon-expires" class="block text-sm font-medium text-gray-700">有効期限 (任意)</label>
+                                    <input type="date" id="coupon-expires" name="expires" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2">
+                                </div>
+                                <div>
+                                    <label for="coupon-max-uses" class="block text-sm font-medium text-gray-700">利用上限回数 (任意, 0=無制限)</label>
+                                    <input type="number" id="coupon-max-uses" name="maxUses" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2" value="0">
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">クーポンを発行</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </main>
