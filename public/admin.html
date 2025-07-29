@@ -130,9 +130,30 @@
                              </div>
                          </div>
                     </div>
+                    
                     <div id="coupons-content" class="tab-pane space-y-8">
+                        <div class="bg-white p-8 rounded-xl shadow-md">
+                            <h3 class="text-lg font-medium text-gray-900 border-b pb-2 mb-4">発行済みクーポン一覧</h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-left text-gray-500">
+                                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                        <tr>
+                                            <th scope="col" class="px-6 py-3">クーポンコード</th>
+                                            <th scope="col" class="px-6 py-3">特典日数</th>
+                                            <th scope="col" class="px-6 py-3">利用状況</th>
+                                            <th scope="col" class="px-6 py-3">有効期限</th>
+                                            <th scope="col" class="px-6 py-3">ステータス</th>
+                                            <th scope="col" class="px-6 py-3 text-right">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="coupons-list-body">
+                                        </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
                         <form id="coupon-form" class="space-y-6 bg-white p-8 rounded-xl shadow-md">
-                            <h3 class="text-lg font-medium text-gray-900 border-b pb-2">クーポン新規発行</h3>
+                            <h3 id="coupon-form-title" class="text-lg font-medium text-gray-900 border-b pb-2">クーポン新規発行</h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label for="coupon-code" class="block text-sm font-medium text-gray-700">クーポンコード (英数字)</label>
@@ -156,6 +177,7 @@
                             </div>
                         </form>
                     </div>
+
                 </div>
             </main>
         </div>

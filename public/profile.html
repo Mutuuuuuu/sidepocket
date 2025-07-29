@@ -18,36 +18,46 @@
         <div id="header-placeholder"></div>
 
         <div id="content-container" class="relative md:ml-20 transition-all duration-300 ease-in-out flex-1 flex flex-col">
-             <header class="flex items-center p-4 bg-white border-b sticky top-0 z-20 h-20">
+            <header class="flex items-center p-4 bg-white border-b sticky top-0 z-20 h-20">
                 <div class="flex-1">
                     <div class="block md:hidden">
                         <button id="mobile-menu-button" class="text-gray-500 hover:text-gray-600 focus:outline-none">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                      d="M4 6h16M4 12h16M4 18h16"></path>
+                            </svg>
                         </button>
                     </div>
                 </div>
-
                 <div class="flex-1 flex justify-center">
                     <div class="hidden md:flex">
-                         <img src="images/sidepocket_Logo.png" alt="Sidepocket Logo" class="h-10">
+                        <img src="images/sidepocket_Logo.png" alt="Sidepocket Logo" class="h-10">
                     </div>
                 </div>
-
                 <div class="flex-1 flex justify-end items-center gap-4">
                     <div class="flex items-center gap-2">
                         <span id="header-display-name" class="text-gray-700 hidden sm:inline">Guest</span>
                         <a href="/profile.html">
-                            <img id="header-user-icon" class="h-10 w-10 rounded-full object-cover" src="images/sidepocket_symbol.png" alt="User icon">
+                            <img id="header-user-icon" class="h-10 w-10 rounded-full object-cover" 
+                                 src="images/sidepocket_symbol.png" alt="User icon">
                         </a>
                     </div>
                     <div class="relative">
                         <button id="notification-button" class="text-gray-500 hover:text-gray-600">
-                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 
+                                         00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 
+                                         .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 
+                                         11-6 0v-1m6 0H9" />
+                            </svg>
                         </button>
                         <div id="notification-panel"
-                            class="hidden absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl z-50 border border-gray-200"
-                            style="transform: translateX(-100%);">
-                            <div class="p-4 border-b"><h3 class="font-bold text-gray-800">お知らせ</h3></div>
+                             class="hidden absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl z-50 border border-gray-200"
+                             style="transform: translateX(-100%);">
+                            <div class="p-4 border-b">
+                                <h3 class="font-bold text-gray-800">お知らせ</h3>
+                            </div>
                             <ul id="notification-list" class="divide-y max-h-96 overflow-y-auto"></ul>
                         </div>
                     </div>
@@ -58,44 +68,62 @@
                 <h1 class="text-3xl font-bold text-gray-800 mb-6">アカウント設定</h1>
                 <div id="status-message-container" class="fixed top-24 right-8 z-50"></div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div class="lg:col-span-2 bg-white p-8 rounded-xl shadow-md">
-                        <form id="profile-form" class="space-y-6">
-                            <h2 class="text-xl font-bold text-gray-800 border-b pb-3">プロフィール情報</h2>
-                             <div>
-                                <label class="block text-sm font-medium text-gray-700">プロフィール画像</label>
-                                <div class="mt-2 flex items-center space-x-6">
-                                    <img id="user-icon-preview" class="h-24 w-24 rounded-full object-cover" src="images/sidepocket_symbol.png" alt="User icon preview">
-                                    <label for="icon-upload-input" class="cursor-pointer bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                        <span>変更</span>
-                                        <input id="icon-upload-input" name="icon-upload" type="file" class="sr-only" accept="image/png, image/jpeg">
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <!-- 左カラム -->
+                    <div class="space-y-6">
+                        <div class="bg-white p-6 rounded-xl shadow-md">
+                            <form id="profile-form" class="space-y-6">
+                                <h2 class="text-xl font-bold text-gray-800 border-b pb-3">プロフィール情報</h2>
+                                
                                 <div>
-                                    <label for="last-name-input" class="block text-sm font-medium text-gray-700">姓</label>
-                                    <input type="text" id="last-name-input" class="mt-1 block w-full p-2 border-gray-300 rounded-md shadow-sm">
+                                    <label class="block text-sm font-medium text-gray-700">プロフィール画像</label>
+                                    <div class="mt-2 flex items-center space-x-6">
+                                        <img id="user-icon-preview" 
+                                             class="h-24 w-24 rounded-full object-cover" 
+                                             src="images/sidepocket_symbol.png" alt="User icon preview">
+                                        <label for="icon-upload-input" 
+                                               class="cursor-pointer bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                            <span>変更</span>
+                                            <input id="icon-upload-input" name="icon-upload" type="file" 
+                                                   class="sr-only" accept="image/png, image/jpeg">
+                                        </label>
+                                    </div>
                                 </div>
+                                
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6">
+                                    <div>
+                                        <label for="last-name-input" class="block text-sm font-medium text-gray-700">姓</label>
+                                        <input type="text" id="last-name-input" 
+                                               class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                    </div>
+                                    <div>
+                                        <label for="first-name-input" class="block text-sm font-medium text-gray-700">名</label>
+                                        <input type="text" id="first-name-input" 
+                                               class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                    </div>
+                                </div>
+                                
                                 <div>
-                                    <label for="first-name-input" class="block text-sm font-medium text-gray-700">名</label>
-                                    <input type="text" id="first-name-input" class="mt-1 block w-full p-2 border-gray-300 rounded-md shadow-sm">
+                                    <label for="display-name-input" class="block text-sm font-medium text-gray-700">表示名 (必須)</label>
+                                    <input type="text" id="display-name-input" required 
+                                           class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
                                 </div>
-                            </div>
-                            <div>
-                                <label for="display-name-input" class="block text-sm font-medium text-gray-700">表示名 (必須)</label>
-                                <input type="text" id="display-name-input" required class="mt-1 block w-full p-2 border-gray-300 rounded-md shadow-sm">
-                            </div>
-                            <div class="pt-4 text-right">
-                                <button type="submit" id="update-profile-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg shadow-md">
-                                    更新する
-                                </button>
-                            </div>
-                        </form>
+                                
+                                <div class="pt-4 text-right">
+                                    <button type="submit" id="update-profile-button" 
+                                            class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg shadow-md">
+                                        更新する
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
 
-                    <div class="space-y-8">
-                         <div class="bg-white p-6 rounded-xl shadow-md">
+                    <!-- 右カラム -->
+                    <div class="space-y-6">
+                        <!-- 会員プラン -->
+                        <div class="bg-white p-6 rounded-xl shadow-md">
                             <h2 class="text-xl font-bold text-gray-800 mb-4">会員プラン</h2>
                             <div id="subscription-status" class="p-4 bg-gray-50 rounded-lg">
                                 <p class="text-sm text-gray-600">現在のプラン</p>
@@ -104,54 +132,65 @@
                                     <span id="plan-start-date"></span> ~ <span id="plan-end-date"></span>
                                 </div>
                             </div>
-                             <div class="mt-4">
-                                <h3 class="text-md font-semibold text-gray-700">招待コード / クーポンコード</h3>
-                                <div class="mt-2">
-                                    <label for="apply-code-input" class="sr-only">コード入力</label>
-                                    <div class="flex rounded-md shadow-sm">
-                                        <input type="text" id="apply-code-input" placeholder="コードを入力" class="flex-1 block w-full p-2 border-gray-300 rounded-none rounded-l-md">
-                                        <button type="button" id="apply-code-button" class="w-24 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-r-md text-white bg-indigo-600 hover:bg-indigo-700">
-                                            適用
-                                        </button>
-                                    </div>
-                                </div>
-                             </div>
                         </div>
 
+                        <!-- リワードプログラム -->
                         <div class="bg-white p-6 rounded-xl shadow-md">
-                            <h2 class="text-xl font-bold text-gray-800 mb-4">招待プログラム</h2>
-                             <div>
+                            <h2 class="text-xl font-bold text-gray-800 mb-4">リワードプログラム</h2>
+                            <p class="text-sm text-gray-600 mb-4">
+                                あなたの招待コード経由で友人が登録すると、あなたに
+                                <span class="font-bold text-indigo-600">60日間</span>、
+                                ご友人には<span class="font-bold text-indigo-600">30日間</span>
+                                のStandardプランが無料で付与されます。
+                            </p>
+                            <div>
                                 <label class="block text-sm font-medium text-gray-700">あなたの招待コード</label>
                                 <div class="mt-1 flex rounded-md shadow-sm">
-                                    <input type="text" id="my-invitation-code" readonly class="flex-1 block w-full p-2 border-gray-300 rounded-none rounded-l-md bg-gray-100">
-                                    <button type="button" id="copy-code-button" class="-ml-px relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100">
+                                    <input type="text" id="my-invitation-code" readonly 
+                                           class="flex-1 block w-full p-2 border border-gray-300 rounded-none rounded-l-md bg-gray-100">
+                                    <button type="button" id="copy-code-button" 
+                                            class="-ml-px relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100">
                                         コピー
                                     </button>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <div class="bg-white p-6 rounded-xl shadow-md">
-                            <h2 class="text-xl font-bold text-gray-800 mb-4">コード利用履歴 (直近5件)</h2>
-                            <ul id="code-usage-history" class="space-y-3">
-                                <li class="text-sm text-gray-500">履歴の読み込み中...</li>
-                            </ul>
+                            <div class="mt-6">
+                                <label for="apply-code-input" class="block text-sm font-medium text-gray-700">招待/クーポンコード入力</label>
+                                <div class="mt-1 flex rounded-md shadow-sm">
+                                    <input type="text" id="apply-code-input" placeholder="コードを入力" 
+                                           class="flex-1 block w-full p-2 border border-gray-300 rounded-none rounded-l-md focus:ring-indigo-500 focus:border-indigo-500">
+                                    <button type="button" id="apply-code-button" 
+                                            class="w-24 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-r-md text-white bg-indigo-600 hover:bg-indigo-700">
+                                        適用
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 利用履歴 -->
+                            <div class="mt-8 pt-6 border-t border-gray-200">
+                                <h3 class="text-md font-semibold text-gray-700 mb-3">コード利用履歴 (直近5件)</h3>
+                                <ul id="code-usage-history" class="space-y-3">
+                                    <li class="text-sm text-gray-500">履歴の読み込み中...</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
             </main>
         </div>
     </div>
-    
-    <div id="notification-detail-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center items-center z-50 p-4">
+
+    <div id="notification-detail-modal" 
+         class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center items-center z-50 p-4">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 relative">
-            <button id="close-notification-modal" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+            <button id="close-notification-modal" 
+                    class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
             <h3 id="notification-modal-title" class="text-xl font-bold mb-2"></h3>
             <p id="notification-modal-date" class="text-sm text-gray-500 mb-4"></p>
             <div id="notification-modal-content" class="text-gray-700 whitespace-pre-wrap"></div>
         </div>
     </div>
-    
+
     <script type="module" src="js/main.js"></script>
 </body>
 </html>

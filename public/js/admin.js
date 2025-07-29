@@ -13,6 +13,9 @@ const getDashboardAnalytics = httpsCallable(functions, 'getDashboardAnalytics');
 const setUserPlan = httpsCallable(functions, 'setUserPlan');
 const getContacts = httpsCallable(functions, 'getContacts');
 const updateContactStatus = httpsCallable(functions, 'updateContactStatus');
+const getCoupons = httpsCallable(functions, 'getCoupons');
+const updateCoupon = httpsCallable(functions, 'updateCoupon');
+const deleteCoupon = httpsCallable(functions, 'deleteCoupon');
 const createCouponCode = httpsCallable(functions, 'createCouponCode');
 
 let allUsers = [];
@@ -599,31 +602,178 @@ const setupContacts = async () => {
 
 const setupCoupons = () => {
     const form = document.getElementById('coupon-form');
-    if (!form) return;
+    const listBody = document.getElementById('coupons-list-body');
+    if (!form || !listBody) return;
 
+    let allCoupons = [];
+    let isEditMode = false;
+    let editCouponId = null;
+
+    const formTitle = document.getElementById('coupon-form-title');
+    const submitButton = form.querySelector('button[type="submit"]');
+    const codeInput = document.getElementById('coupon-code');
+
+    // フォームをリセットする関数
+    const resetForm = () => {
+        form.reset();
+        isEditMode = false;
+        editCouponId = null;
+        formTitle.textContent = 'クーポン新規発行';
+        submitButton.textContent = 'クーポンを発行';
+        codeInput.disabled = false;
+        
+        // キャンセルボタンがあれば隠す
+        const cancelBtn = document.getElementById('cancel-coupon-edit-btn');
+        if (cancelBtn) cancelBtn.remove();
+    };
+
+    // クーポンリストを描画する関数
+    const renderCoupons = (coupons) => {
+        listBody.innerHTML = '';
+        if (coupons.length === 0) {
+            listBody.innerHTML = '<tr><td colspan="6" class="text-center p-8 text-gray-500">発行済みのクーポンはありません。</td></tr>';
+            return;
+        }
+
+        coupons.forEach(c => {
+            const tr = document.createElement('tr');
+            tr.className = 'bg-white border-b hover:bg-gray-50';
+
+            const expiresAt = c.expiresAt ? toDate(c.expiresAt).toLocaleDateString('ja-JP') : '無期限';
+            const useCount = c.useCount || 0;
+            const maxUses = c.maxUses || '∞';
+            const status = c.isActive ? 
+                '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">有効</span>' :
+                '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">無効</span>';
+
+            tr.innerHTML = `
+                <td class="px-6 py-4 font-medium text-gray-900">${c.id}</td>
+                <td class="px-6 py-4">${c.benefit.durationDays}日</td>
+                <td class="px-6 py-4">${useCount} / ${maxUses} 回</td>
+                <td class="px-6 py-4">${expiresAt}</td>
+                <td class="px-6 py-4">${status}</td>
+                <td class="px-6 py-4 text-right space-x-4">
+                    <button class="edit-coupon-btn font-medium text-indigo-600 hover:underline" data-id="${c.id}">編集</button>
+                    <button class="delete-coupon-btn font-medium text-red-600 hover:underline" data-id="${c.id}">削除</button>
+                </td>
+            `;
+            listBody.appendChild(tr);
+        });
+    };
+    
+    // クーポンを読み込んで描画するメインの関数
+    const loadAndRenderCoupons = async () => {
+        toggleLoading(true);
+        try {
+            const result = await getCoupons();
+            allCoupons = result.data;
+            renderCoupons(allCoupons);
+        } catch (error) {
+            showStatus(`クーポンリストの読み込みに失敗しました: ${error.message}`, true);
+        } finally {
+            toggleLoading(false);
+        }
+    };
+
+    // フォームの送信イベント
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        toggleLoading(true);
+
         const data = {
-            code: form.code.value.trim(),
             durationDays: parseInt(form.duration.value, 10),
             expiresAt: form.expires.value || null,
             maxUses: parseInt(form.maxUses.value, 10) || null,
         };
 
-        if (!data.code || !data.durationDays) {
-            showStatus('クーポンコードと特典日数は必須です。', true);
-            return;
-        }
-
-        toggleLoading(true);
         try {
-            const result = await createCouponCode(data);
-            showStatus(result.data.message, false);
-            form.reset();
+            if (isEditMode) {
+                data.id = editCouponId;
+                // 編集モードでは有効/無効の切り替えも可能にする（もしフォームに追加する場合）
+                // data.isActive = document.getElementById('coupon-is-active').checked;
+                data.isActive = true; // ここでは単純に有効のまま更新
+                const result = await updateCoupon(data);
+                showStatus(result.data.message, false);
+            } else {
+                data.code = form.code.value.trim();
+                if (!data.code || !data.durationDays) {
+                    showStatus('クーポンコードと特典日数は必須です。', true);
+                    toggleLoading(false);
+                    return;
+                }
+                const result = await createCouponCode(data);
+                showStatus(result.data.message, false);
+            }
+            resetForm();
+            await loadAndRenderCoupons(); // リストを再読み込み
         } catch (error) {
             showStatus(`エラー: ${error.message}`, true);
         } finally {
             toggleLoading(false);
         }
     });
+
+    // リスト内のボタン（編集・削除）のクリックイベント
+    listBody.addEventListener('click', async (e) => {
+        const target = e.target;
+        const id = target.dataset.id;
+        if (!id) return;
+
+        // 編集ボタンが押された場合
+        if (target.classList.contains('edit-coupon-btn')) {
+            const coupon = allCoupons.find(c => c.id === id);
+            if (coupon) {
+                isEditMode = true;
+                editCouponId = coupon.id;
+                
+                formTitle.textContent = `クーポン「${coupon.id}」を編集`;
+                submitButton.textContent = '更新する';
+
+                codeInput.value = coupon.id;
+                codeInput.disabled = true;
+                
+                form.duration.value = coupon.benefit.durationDays;
+                form.expires.value = coupon.expiresAt ? toDate(coupon.expiresAt).toISOString().split('T')[0] : '';
+                form.maxUses.value = coupon.maxUses || 0;
+                
+                // キャンセルボタンを追加
+                if (!document.getElementById('cancel-coupon-edit-btn')) {
+                    const cancelBtn = document.createElement('button');
+                    cancelBtn.type = 'button';
+                    cancelBtn.id = 'cancel-coupon-edit-btn';
+                    cancelBtn.textContent = 'キャンセル';
+                    cancelBtn.className = 'bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg ml-4';
+                    cancelBtn.onclick = resetForm;
+                    submitButton.after(cancelBtn);
+                }
+                
+                form.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // 削除ボタンが押された場合
+        if (target.classList.contains('delete-coupon-btn')) {
+            const confirmed = await showConfirmModal(
+                '削除の確認', 
+                `クーポン「${id}」を本当に削除しますか？この操作は取り消せません。`,
+                { confirmText: '削除', confirmColor: 'red', iconType: 'warning' }
+            );
+
+            if (confirmed) {
+                toggleLoading(true);
+                try {
+                    await deleteCoupon({ id });
+                    showStatus(`クーポン「${id}」を削除しました。`);
+                    await loadAndRenderCoupons(); // リストを再読み込み
+                } catch (error) {
+                    showStatus(`削除中にエラーが発生しました: ${error.message}`, true);
+                } finally {
+                    toggleLoading(false);
+                }
+            }
+        }
+    });
+
+    // 初期表示
+    loadAndRenderCoupons();
 };

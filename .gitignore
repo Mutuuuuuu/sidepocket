@@ -70,3 +70,6 @@ node_modules/
 
 # Google Cloud Credentials
 admin_script/side-pocket-sls-firebase-adminsdk-fbsvc-de8f39c10d.json
+
+# Google Cloud Credentials(Dev)
+admin_script/side-pocket-dev-firebase-adminsdk-fbsvc-4312ab8d13.json

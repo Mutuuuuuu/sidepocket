@@ -2,33 +2,27 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onRequest } = require("firebase-functions/v2/https");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { logger } = require("firebase-functions/v2");
 const { defineSecret } = require("firebase-functions/params");
-const functions = require("firebase-functions"); // v1 for pubsub schedule
 const cors = require("cors")({ origin: true });
 
 // Firebase Admin SDKモジュールをインポート
-const { initializeApp } = require("firebase-admin/app");
+const admin = require("firebase-admin");
+const { getFirestore, FieldValue, Timestamp } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
-const { getFirestore, FieldValue, Timestamp, runTransaction } = require("firebase-admin/firestore");
 
-// Admin SDKを初期化
-initializeApp();
+admin.initializeApp();
+const db = getFirestore();
 
 // 使用するSecretを定義
 const GOOGLE_CLIENT_ID = defineSecret("GOOGLE_CLIENT_ID");
 const GOOGLE_CLIENT_SECRET = defineSecret("GOOGLE_CLIENT_SECRET");
-/*const STRIPE_SECRET_KEY = defineSecret("STRIPE_SECRET_KEY");
-const STRIPE_WEBHOOK_SECRET = defineSecret("STRIPE_WEBHOOK_SECRET");*/
+// const STRIPE_SECRET_KEY = defineSecret("STRIPE_SECRET_KEY");
+// const STRIPE_WEBHOOK_SECRET = defineSecret("STRIPE_WEBHOOK_SECRET");
 
-// googleapisは初回利用時に遅延読み込み
 let googleapis;
 
-/**
- * ランダムな英数字の招待コードを生成するヘルパー関数
- * @param {number} length - 生成するコードの長さ
- * @returns {string} 生成されたコード
- */
 const generateReferralCode = (length = 8) => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let result = "";
@@ -38,21 +32,12 @@ const generateReferralCode = (length = 8) => {
   return result;
 };
 
-
-// --- Firestore Triggers ---
-
-/**
- * 新規ユーザーがAuthに作成された後、Firestoreドキュメントが作成されるのをトリガーに実行
- * ユーザーの初期プラン設定と、ユニークな招待コードの発行を行う
- */
 exports.onUserCreate = onDocumentCreated("users/{userId}", async (event) => {
     const userDocRef = event.data.ref;
     const userId = event.params.userId;
-    const db = getFirestore();
     const batch = db.batch();
-
-    // 1. ユーザー情報に初期値を設定
     const invitationCode = generateReferralCode();
+    
     batch.update(userDocRef, {
         plan: "Free",
         planStartDate: null,
@@ -62,9 +47,7 @@ exports.onUserCreate = onDocumentCreated("users/{userId}", async (event) => {
         usedInvitationCode: false,
         stripeCustomerId: null,
     });
-    logger.info(`Initialized user profile for ${userId}`);
-
-    // 2. 招待コードをcodesコレクションに登録
+    
     const codeDocRef = db.collection("codes").doc(invitationCode);
     batch.set(codeDocRef, {
         code: invitationCode,
@@ -77,75 +60,69 @@ exports.onUserCreate = onDocumentCreated("users/{userId}", async (event) => {
         useCount: 0,
         benefit: {
             type: "PLAN_EXTENSION",
-            durationDays: 30, // 被招待者の特典日数
+            durationDays: 30,
         },
     });
-    logger.info(`Generated invitation code ${invitationCode} for user ${userId}`);
 
     try {
         await batch.commit();
+        logger.info(`User profile and invitation code created for ${userId}`);
     } catch (error) {
         logger.error(`Error during user initialization for ${userId}:`, error);
     }
 });
 
-
-// --- Callable Functions ---
-
-/**
- * 招待コード/クーポンコードを適用する
- */
 exports.applyCode = onCall(async (request) => {
     if (!request.auth) {
         throw new HttpsError("unauthenticated", "この操作には認証が必要です。");
     }
-
     const code = request.data.code?.toUpperCase();
     if (!code || typeof code !== "string") {
         throw new HttpsError("invalid-argument", "コードを正しく入力してください。");
     }
-
     const refereeId = request.auth.uid;
-    const db = getFirestore();
 
     try {
-        const resultMessage = await runTransaction(db, async (transaction) => {
+        const historyQuery = db.collection('users').doc(refereeId).collection('codeUsageHistory').where('code', '==', code);
+        const historySnapshot = await historyQuery.get();
+        if (!historySnapshot.empty) {
+            throw new HttpsError("already-exists", "このコードは既に使用済みです。");
+        }
+        
+        const resultMessage = await db.runTransaction(async (transaction) => {
             const codeDocRef = db.collection("codes").doc(code);
             const refereeDocRef = db.collection("users").doc(refereeId);
-            const historyRef = db.collection("users").doc(refereeId).collection("codeUsageHistory");
 
             const [codeDoc, refereeDoc] = await Promise.all([
                 transaction.get(codeDocRef),
                 transaction.get(refereeDocRef),
             ]);
 
-            // --- バリデーション ---
             if (!codeDoc.exists) throw new HttpsError("not-found", "このコードは存在しません。");
             const codeData = codeDoc.data();
             if (!codeData.isActive) throw new HttpsError("failed-precondition", "このコードは現在無効です。");
             if (codeData.expiresAt && codeData.expiresAt.toDate() < new Date()) throw new HttpsError("failed-precondition", "このコードの有効期限は切れています。");
-            if (codeData.maxUses && codeData.useCount >= codeData.maxUses) throw new HttpsError("resource-exhausted", "このコードの利用上限に達しました。");
-
+            if (codeData.maxUses != null && codeData.useCount >= codeData.maxUses) throw new HttpsError("resource-exhausted", "このコードの利用上限に達しました。");
+            
             const refereeData = refereeDoc.data();
             if (!refereeData) throw new HttpsError("not-found", "ユーザー情報が見つかりません。");
-
-            // --- 履歴チェック ---
-            const usageQuery = await historyRef.where("code", "==", code).get();
-            if (!usageQuery.empty) {
-                 throw new HttpsError("already-exists", "このコードは既に使用済みです。");
-            }
 
             if (codeData.type === "invitation") {
                 if (codeData.ownerUid === refereeId) throw new HttpsError("invalid-argument", "自分の招待コードは使用できません。");
                 if (refereeData.usedInvitationCode) throw new HttpsError("already-exists", "招待コードは一度しか使用できません。");
             }
+            
+            if (!codeData.benefit || typeof codeData.benefit.durationDays !== 'number') {
+                throw new HttpsError("failed-precondition", "コードに特典情報が正しく設定されていません。");
+            }
 
-            // --- 特典適用処理 ---
             const now = new Date();
             const benefitDescription = `Standardプラン ${codeData.benefit.durationDays}日間`;
+            
+            const refereeCurrentEndDate = (refereeData.planEndDate && typeof refereeData.planEndDate.toDate === 'function')
+                ? refereeData.planEndDate.toDate()
+                : now;
 
-            // 1. コード適用者（referee）のプランを更新
-            const refereeCurrentEndDate = refereeData.planEndDate ? refereeData.planEndDate.toDate() : now;
             const refereeBaseDate = refereeCurrentEndDate > now ? refereeCurrentEndDate : now;
             const refereeNewEndDate = new Date(refereeBaseDate);
             refereeNewEndDate.setDate(refereeNewEndDate.getDate() + codeData.benefit.durationDays);
@@ -160,37 +137,36 @@ exports.applyCode = onCall(async (request) => {
             }
             transaction.update(refereeDocRef, refereeUpdateData);
 
-            // 2. コード提供者（referrer）のプランを更新 (招待コードの場合のみ)
             if (codeData.type === "invitation") {
                 const referrerDocRef = db.collection("users").doc(codeData.ownerUid);
                 const referrerDoc = await transaction.get(referrerDocRef);
-                const referrerData = referrerDoc.data();
+                if (referrerDoc.exists) {
+                    const referrerData = referrerDoc.data();
+                    const referrerCurrentEndDate = (referrerData.planEndDate && typeof referrerData.planEndDate.toDate === 'function')
+                        ? referrerData.planEndDate.toDate()
+                        : now;
+                    const referrerBaseDate = referrerCurrentEndDate > now ? referrerCurrentEndDate : now;
+                    const referrerNewEndDate = new Date(referrerBaseDate);
+                    referrerNewEndDate.setDate(referrerNewEndDate.getDate() + 60);
 
-                const referrerCurrentEndDate = referrerData.planEndDate ? referrerData.planEndDate.toDate() : now;
-                const referrerBaseDate = referrerCurrentEndDate > now ? referrerCurrentEndDate : now;
-                const referrerNewEndDate = new Date(referrerBaseDate);
-                referrerNewEndDate.setDate(referrerNewEndDate.getDate() + 60); // 招待者は60日間延長
-
-                transaction.update(referrerDocRef, {
-                    plan: "Standard",
-                    planStartDate: referrerData.planStartDate || Timestamp.fromDate(now),
-                    planEndDate: Timestamp.fromDate(referrerNewEndDate),
-                });
-                
-                 // 招待者の履歴にも記録
-                const referrerHistoryRef = db.collection("users").doc(codeData.ownerUid).collection("codeUsageHistory").doc();
-                transaction.set(referrerHistoryRef, {
-                    code, type: "invitation", action: "provided", usedAt: FieldValue.serverTimestamp(),
-                    appliedToUid: refereeId, providerUid: null, benefitDescription: "Standardプラン 60日間"
-                });
+                    transaction.update(referrerDocRef, {
+                        plan: "Standard",
+                        planStartDate: referrerData.planStartDate || Timestamp.fromDate(now),
+                        planEndDate: Timestamp.fromDate(referrerNewEndDate),
+                    });
+                    
+                    const referrerHistoryRef = db.collection("users").doc(codeData.ownerUid).collection("codeUsageHistory").doc();
+                    transaction.set(referrerHistoryRef, {
+                        code, type: "invitation", action: "provided", usedAt: FieldValue.serverTimestamp(),
+                        appliedToUid: refereeId, providerUid: null, benefitDescription: "Standardプラン 60日間"
+                    });
+                }
             }
 
-            // 3. codesコレクションを更新
             transaction.update(codeDocRef, { useCount: FieldValue.increment(1) });
-
-            // 4. 適用者の履歴を記録
-            const refereeHistoryRef = historyRef.doc();
-            transaction.set(refereeHistoryRef, {
+            
+            const newHistoryRef = db.collection('users').doc(refereeId).collection('codeUsageHistory').doc();
+            transaction.set(newHistoryRef, {
                 code, type: codeData.type, action: "applied", usedAt: FieldValue.serverTimestamp(),
                 appliedToUid: null, providerUid: codeData.ownerUid || null, benefitDescription
             });
@@ -199,33 +175,30 @@ exports.applyCode = onCall(async (request) => {
         });
         return resultMessage;
     } catch (error) {
-        logger.error("Error applying code:", { code, userId: refereeId, error });
+        logger.error("Error applying code:", {
+            code,
+            userId: refereeId,
+            message: error.message,
+            stack: error.stack,
+        });
         if (error instanceof HttpsError) throw error;
-        throw new HttpsError("internal", "コードの適用中にエラーが発生しました。");
+        throw new HttpsError("internal", `コードの適用中にエラーが発生しました: ${error.message}`);
     }
 });
 
-/**
- * クーポンコードを作成する (管理者用)
- */
 exports.createCouponCode = onCall(async (request) => {
     if (!request.auth || !request.auth.token.isAdmin) {
         throw new HttpsError("permission-denied", "管理者権限が必要です。");
     }
-
     const { code, durationDays, expiresAt, maxUses } = request.data;
     if (!code || !durationDays) {
         throw new HttpsError("invalid-argument", "コードと特典日数は必須です。");
     }
-
-    const db = getFirestore();
     const codeDocRef = db.collection("codes").doc(code.toUpperCase());
-
     const doc = await codeDocRef.get();
     if (doc.exists) {
         throw new HttpsError("already-exists", "このクーポンコードは既に使用されています。");
     }
-
     try {
         await codeDocRef.set({
             code: code.toUpperCase(),
@@ -248,8 +221,6 @@ exports.createCouponCode = onCall(async (request) => {
     }
 });
 
-
-// --- お問い合わせフォーム機能 ---
 exports.sendContactForm = onRequest(async (req, res) => {
     cors(req, res, async () => {
       if (req.method !== "POST") {
@@ -260,9 +231,7 @@ exports.sendContactForm = onRequest(async (req, res) => {
         if (!name || !email || !message) {
           return res.status(400).send("Missing required fields.");
         }
-        const db = getFirestore();
-        const contactRef = db.collection("contacts").doc();
-        await contactRef.set({
+        await db.collection("contacts").add({
           name,
           email,
           message,
@@ -278,13 +247,11 @@ exports.sendContactForm = onRequest(async (req, res) => {
     });
 });
 
-// --- お問い合わせ一覧取得機能 (管理者用) ---
 exports.getContacts = onCall(async (request) => {
     if (!request.auth || !request.auth.token.isAdmin) {
         throw new HttpsError("permission-denied", "管理者権限が必要です。");
     }
     try {
-        const db = getFirestore();
         const snapshot = await db.collection("contacts").orderBy("createdAt", "desc").get();
         const contacts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         return contacts;
@@ -294,7 +261,6 @@ exports.getContacts = onCall(async (request) => {
     }
 });
 
-// --- お問い合わせステータス更新機能 (管理者用) ---
 exports.updateContactStatus = onCall(async (request) => {
     if (!request.auth || !request.auth.token.isAdmin) {
         throw new HttpsError("permission-denied", "管理者権限が必要です。");
@@ -304,7 +270,6 @@ exports.updateContactStatus = onCall(async (request) => {
         throw new HttpsError("invalid-argument", "IDと新しいステータスを指定してください。");
     }
     try {
-        const db = getFirestore();
         const contactRef = db.collection("contacts").doc(contactId);
         const doc = await contactRef.get();
         if (!doc.exists) {
@@ -328,16 +293,12 @@ exports.updateContactStatus = onCall(async (request) => {
     }
 });
 
-// --- Stripe Checkoutセッションを作成する ---
 /*
 exports.createCheckoutSession = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (request) => {
     if (!request.auth) {
         throw new HttpsError("unauthenticated", "この操作には認証が必要です。");
     }
-
-    // ▼▼▼ 関数内でStripeを初期化 ▼▼▼
     const stripe = require("stripe")(STRIPE_SECRET_KEY.value());
-    
     const uid = request.auth.uid;
     const { priceId, successUrl, cancelUrl } = request.data;
     try {
@@ -360,11 +321,8 @@ exports.createCheckoutSession = onCall({ secrets: [STRIPE_SECRET_KEY] }, async (
     }
 });
 
-// --- Stripe Webhookを処理する ---
 exports.stripeWebhook = onRequest({ secrets: [STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET] }, async (req, res) => {
-    // ▼▼▼ 関数内でStripeを初期化 ▼▼▼
     const stripe = require("stripe")(STRIPE_SECRET_KEY.value());
-
     const sig = req.headers["stripe-signature"];
     const endpointSecret = STRIPE_WEBHOOK_SECRET.value();
     let event;
@@ -375,7 +333,6 @@ exports.stripeWebhook = onRequest({ secrets: [STRIPE_SECRET_KEY, STRIPE_WEBHOOK_
         res.status(400).send(`Webhook Error: ${err.message}`);
         return;
     }
-    const db = getFirestore();
     switch (event.type) {
         case "checkout.session.completed": {
             const session = event.data.object;
@@ -415,7 +372,6 @@ exports.stripeWebhook = onRequest({ secrets: [STRIPE_SECRET_KEY, STRIPE_WEBHOOK_
 });
 */
 
-// --- Google Calendar連携 ---
 exports.getCalendarList = onCall({ secrets: [GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET] }, async (request) => {
   if (!googleapis) {
     googleapis = require("googleapis");
@@ -489,7 +445,6 @@ exports.getCalendarEvents = onCall({ secrets: [GOOGLE_CLIENT_ID, GOOGLE_CLIENT_S
   }
 });
 
-// --- 全ユーザーの取得 ---
 exports.getAllUsers = onCall(async (request) => {
   if (!request.auth || !request.auth.token.isAdmin) {
     throw new HttpsError("permission-denied", "この操作を実行するには管理者権限が必要です。");
@@ -498,7 +453,7 @@ exports.getAllUsers = onCall(async (request) => {
     const listUsersResult = await getAuth().listUsers(1000);
     const userProfiles = await Promise.all(
       listUsersResult.users.map(async (userRecord) => {
-        const userDoc = await getFirestore().collection("users").doc(userRecord.uid).get();
+        const userDoc = await db.collection("users").doc(userRecord.uid).get();
         const profile = userDoc.exists ? userDoc.data() : {};
         return {
           uid: userRecord.uid,
@@ -517,7 +472,6 @@ exports.getAllUsers = onCall(async (request) => {
   }
 });
 
-// --- ユーザー詳細の取得 ---
 exports.getUserDetails = onCall(async (request) => {
     if (!request.auth || !request.auth.token.isAdmin) {
         throw new HttpsError("permission-denied", "この操作を実行するには管理者権限が必要です。");
@@ -527,7 +481,6 @@ exports.getUserDetails = onCall(async (request) => {
         throw new HttpsError("invalid-argument", "UIDを指定してください。");
     }
     try {
-        const db = getFirestore();
         const userDoc = await db.collection("users").doc(uid).get();
         if (!userDoc.exists) {
             throw new HttpsError("not-found", "ユーザーが見つかりません。");
@@ -545,7 +498,6 @@ exports.getUserDetails = onCall(async (request) => {
 });
 
 
-// --- 管理者権限の設定 ---
 exports.setUserAdminRole = onCall(async (request) => {
   if (!request.auth || !request.auth.token.isAdmin) {
     throw new HttpsError("permission-denied", "この操作を実行するには管理者権限が必要です。");
@@ -563,7 +515,6 @@ exports.setUserAdminRole = onCall(async (request) => {
   }
 });
 
-// --- 会員プランの設定 ---
 exports.setUserPlan = onCall(async (request) => {
     if (!request.auth || !request.auth.token.isAdmin) {
       throw new HttpsError("permission-denied", "この操作を実行するには管理者権限が必要です。");
@@ -573,7 +524,7 @@ exports.setUserPlan = onCall(async (request) => {
       throw new HttpsError("invalid-argument", "UID(string)とplan('Free'または'Standard')を正しく指定してください。");
     }
     try {
-      await getFirestore().collection("users").doc(uid).set({ plan: plan }, { merge: true });
+      await db.collection("users").doc(uid).set({ plan: plan }, { merge: true });
       return { message: `ユーザー(UID: ${uid})のプランを ${plan} に更新しました。` };
     } catch (error) {
       logger.error("プランの設定中にエラーが発生しました:", error);
@@ -581,16 +532,14 @@ exports.setUserPlan = onCall(async (request) => {
     }
 });
 
-
-// --- ダッシュボード分析データ取得 ---
 exports.getDashboardAnalytics = onCall(async (request) => {
     if (!request.auth || !request.auth.token.isAdmin) {
         throw new HttpsError("permission-denied", "管理者権限が必要です。");
     }
     try {
-        const db = getFirestore();
         const usersSnapshot = await db.collection("users").get();
         const allUsers = usersSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+        
         let totalProjects = 0;
         let totalDurationHours = 0;
         const projectsByMonth = {};
@@ -598,6 +547,7 @@ exports.getDashboardAnalytics = onCall(async (request) => {
         const now = new Date();
         const lastMonth = new Date(now.getFullYear(), now.getMonth() -1, now.getDate());
         let monthlyActiveUsers = new Set();
+
         for (const user of allUsers) {
             const projectsSnapshot = await db.collection("users").doc(user.uid).collection("projects").get();
             totalProjects += projectsSnapshot.size;
@@ -608,6 +558,7 @@ exports.getDashboardAnalytics = onCall(async (request) => {
                     projectsByMonth[month] = (projectsByMonth[month] || 0) + 1;
                 }
             });
+
             const timestampsSnapshot = await db.collection("users").doc(user.uid).collection("timestamps").get();
             let userIsActiveInLast30Days = false;
             timestampsSnapshot.forEach(doc => {
@@ -625,6 +576,7 @@ exports.getDashboardAnalytics = onCall(async (request) => {
             });
             if(userIsActiveInLast30Days) monthlyActiveUsers.add(user.uid);
         }
+
         const contactsSnapshot = await db.collection("contacts").where("status", "==", "完了").get();
         let totalL1ResponseLeadTime = 0;
         let totalCloseLeadTime = 0;
@@ -637,42 +589,51 @@ exports.getDashboardAnalytics = onCall(async (request) => {
                 completedContactsCount++;
             }
         });
+
         const avgL1ResponseLeadTime = completedContactsCount > 0 ? totalL1ResponseLeadTime / completedContactsCount : null;
         const avgCloseLeadTime = completedContactsCount > 0 ? totalCloseLeadTime / completedContactsCount : null;
+
         const userRegistrationByMonth = {};
-        allUsers.forEach(user => {
-            const userCreationTime = getAuth().getUser(user.uid).then(u => u.metadata.creationTime);
-            if(userCreationTime) {
-              const month = new Date(userCreationTime).toISOString().slice(0, 7);
-              userRegistrationByMonth[month] = (userRegistrationByMonth[month] || 0) + 1;
+        const listUsersResult = await getAuth().listUsers(1000); // listUsersで全ユーザー情報を一括取得
+        listUsersResult.users.forEach(userRecord => {
+            if (userRecord.metadata.creationTime) {
+                const month = new Date(userRecord.metadata.creationTime).toISOString().slice(0, 7);
+                userRegistrationByMonth[month] = (userRegistrationByMonth[month] || 0) + 1;
             }
         });
+
         const labels = [];
         for (let i = 11; i >= 0; i--) {
             const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
             labels.push(d.toISOString().slice(0, 7));
         }
+
         let cumulativeUsers = 0;
         const cumulativeUserCounts = {};
         Object.keys(userRegistrationByMonth).sort().forEach(month => {
             cumulativeUsers += userRegistrationByMonth[month];
             cumulativeUserCounts[month] = cumulativeUsers;
         });
+
         for(let i=1; i < labels.length; i++) {
             if (!cumulativeUserCounts[labels[i]]) {
                 cumulativeUserCounts[labels[i]] = cumulativeUserCounts[labels[i-1]] || 0;
             }
         }
+
         const userChartData = labels.map(month => ({
             month,
             total: cumulativeUserCounts[month] || 0,
             active: activeUsersByMonth[month] ? activeUsersByMonth[month].size : 0,
         }));
+
         const projectChartData = labels.map(month => ({
             month,
             count: projectsByMonth[month] || 0
         }));
+
         const activeRate = allUsers.length > 0 ? (monthlyActiveUsers.size / allUsers.length) * 100 : 0;
+
         return {
             totalUsers: allUsers.length,
             totalProjects,
@@ -694,43 +655,106 @@ exports.getDashboardAnalytics = onCall(async (request) => {
 /**
  * 毎日午前3時に実行し、プランの有効期限をチェックする
  */
-exports.scheduledPlanCheck = functions.region('asia-northeast1').pubsub.schedule("every day 03:00")
-    .timeZone("Asia/Tokyo")
-    .onRun(async (context) => {
-        const db = getFirestore();
-        const now = Timestamp.now();
-        const usersRef = db.collection("users");
+exports.scheduledPlanCheck = onSchedule({
+    schedule: "every day 03:00",
+    timeZone: "Asia/Tokyo",
+    region: "asia-northeast1",
+}, async (event) => {
+    const now = Timestamp.now();
+    const usersRef = db.collection("users");
+    const q = usersRef.where("plan", "==", "Standard").where("planEndDate", "<=", now);
+    const snapshot = await q.get();
 
-        const q = usersRef.where("plan", "==", "Standard").where("planEndDate", "<=", now);
-        const snapshot = await q.get();
-
-        if (snapshot.empty) {
-            logger.info("No expired Standard plan users found.");
-            return null;
-        }
-
-        const batch = db.batch();
-        snapshot.docs.forEach((doc) => {
-            const userData = doc.data();
-            // 将来の自動決済ロジックをここに追加
-            if (userData.autoRenew && userData.stripeCustomerId) {
-                // Stripe決済処理を呼び出す (今回は未実装)
-                logger.info(`Skipping downgrade for user with autoRenew: ${doc.id}`);
-            } else {
-                logger.info(`Downgrading plan for user: ${doc.id} due to expiration.`);
-                batch.update(doc.ref, {
-                    plan: "Free",
-                    planStartDate: null,
-                    planEndDate: null,
-                });
-            }
-        });
-
-        try {
-            await batch.commit();
-            logger.info(`Successfully processed ${snapshot.size} users.`);
-        } catch (error) {
-            logger.error("Error during plan downgrading cron job:", error);
-        }
+    if (snapshot.empty) {
+        logger.info("No expired Standard plan users found.");
         return null;
+    }
+
+    const batch = db.batch();
+    snapshot.docs.forEach((doc) => {
+        const userData = doc.data();
+        if (userData.autoRenew && userData.stripeCustomerId) {
+            logger.info(`Skipping downgrade for user with autoRenew: ${doc.id}`);
+        } else {
+            logger.info(`Downgrading plan for user: ${doc.id} due to expiration.`);
+            batch.update(doc.ref, {
+                plan: "Free",
+                planStartDate: null,
+                planEndDate: null,
+            });
+        }
     });
+
+    try {
+        await batch.commit();
+        logger.info(`Successfully processed ${snapshot.size} users.`);
+    } catch (error) {
+        logger.error("Error during plan downgrading cron job:", error);
+    }
+    return null;
+});
+/**
+ * 登録されているクーポンを全て取得する
+ */
+exports.getCoupons = onCall(async (request) => {
+    if (!request.auth || !request.auth.token.isAdmin) {
+        throw new HttpsError("permission-denied", "管理者権限が必要です。");
+    }
+    try {
+        const snapshot = await db.collection("codes").where("type", "==", "coupon").orderBy("createdAt", "desc").get();
+        const coupons = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        return coupons;
+    } catch (error) {
+        logger.error("クーポン一覧の取得エラー:", error);
+        throw new HttpsError("internal", "クーポン一覧の取得に失敗しました。");
+    }
+});
+
+/**
+ * 既存のクーポン情報を更新する
+ */
+exports.updateCoupon = onCall(async (request) => {
+    if (!request.auth || !request.auth.token.isAdmin) {
+        throw new HttpsError("permission-denied", "管理者権限が必要です。");
+    }
+    const { id, durationDays, expiresAt, maxUses, isActive } = request.data;
+    if (!id) {
+        throw new HttpsError("invalid-argument", "クーポンIDは必須です。");
+    }
+
+    try {
+        const couponRef = db.collection("codes").doc(id);
+        const updateData = {
+            'benefit.durationDays': Number(durationDays),
+            expiresAt: expiresAt ? Timestamp.fromDate(new Date(expiresAt)) : null,
+            maxUses: Number(maxUses) || null,
+            isActive: isActive
+        };
+
+        await couponRef.update(updateData);
+        return { success: true, message: `クーポン「${id}」を更新しました。` };
+    } catch (error) {
+        logger.error(`クーポン[${id}]の更新エラー:`, error);
+        throw new HttpsError("internal", "クーポンの更新に失敗しました。");
+    }
+});
+
+/**
+ * クーポンを削除する
+ */
+exports.deleteCoupon = onCall(async (request) => {
+    if (!request.auth || !request.auth.token.isAdmin) {
+        throw new HttpsError("permission-denied", "管理者権限が必要です。");
+    }
+    const { id } = request.data;
+    if (!id) {
+        throw new HttpsError("invalid-argument", "クーポンIDは必須です。");
+    }
+    try {
+        await db.collection("codes").doc(id).delete();
+        return { success: true, message: `クーポン「${id}」を削除しました。` };
+    } catch (error) {
+        logger.error(`クーポン[${id}]の削除エラー:`, error);
+        throw new HttpsError("internal", "クーポンの削除に失敗しました。");
+    }
+});
