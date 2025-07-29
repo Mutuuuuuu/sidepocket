@@ -59,6 +59,7 @@ const updateClock = () => {
     }
 };
 
+// ▼▼▼ [修正点1] 取引先がオブジェクトの場合に対応 ▼▼▼
 const loadActiveProjects = () => {
     return new Promise((resolve) => {
         const unsubscribe = getProjects(currentUser.uid, 'active', (activeProjects) => {
@@ -69,7 +70,10 @@ const loadActiveProjects = () => {
                     : '<option value="">プロジェクトを選択してください</option>';
                 
                 projects.forEach(p => {
-                    projectSelectMain.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+                    // p.client が存在し、その name プロパティがある場合のみ取引先名を表示
+                    const clientName = (p.client && p.client.name) ? p.client.name : '';
+                    const displayText = [p.code, clientName, p.name].filter(Boolean).join(' '); // 空の要素を除外して結合
+                    projectSelectMain.innerHTML += `<option value="${p.id}">${displayText}</option>`;
                 });
             }
             resolve();
@@ -96,21 +100,18 @@ const listenForRecentRecords = () => {
     });
 };
 
-// ▼▼▼ この関数を修正 ▼▼▼
 const handlePunchButtonClick = async () => {
     punchButton.disabled = true;
     if (activeClockInDoc) {
-        // 退勤処理の前に、更新対象のドキュメントIDをローカル変数に保持しておく
         const docIdToUpdate = activeClockInDoc.id;
         try {
             await clockOut(currentUser.uid, docIdToUpdate);
             showStatus('退勤しました。お疲れ様でした！', false);
-            // 保持しておいたIDを使ってモーダルを開く
             openDetailsModal(docIdToUpdate);
         } catch (error) {
             console.error("退勤処理エラー:", error);
             showStatus('退勤処理中にエラーが発生しました。', true);
-            punchButton.disabled = false; // エラー時はボタンを再度有効化
+            punchButton.disabled = false;
         }
     } else {
         const selectedProjectId = projectSelectMain.value;
@@ -120,17 +121,22 @@ const handlePunchButtonClick = async () => {
             return;
         }
         const selectedProject = projects.find(p => p.id === selectedProjectId);
-        const projectData = { id: selectedProject.id, name: selectedProject.name, code: selectedProject.code };
+        // 保存するデータは変更なし（clientオブジェクト全体を保存）
+        const projectData = { 
+            id: selectedProject.id, 
+            name: selectedProject.name, 
+            code: selectedProject.code,
+            client: selectedProject.client 
+        };
         try {
             await clockIn(currentUser.uid, projectData);
             showStatus('出勤しました。おはようございます！', false);
         } catch (error) {
             showStatus('出勤処理中にエラーが発生しました。', true);
-            punchButton.disabled = false; // エラー時はボタンを再度有効化
+            punchButton.disabled = false;
         }
     }
 };
-// ▲▲▲ ここまで修正 ▲▲▲
 
 const openDetailsModal = (timestampId) => {
     clockOutDetailsForm.reset();
@@ -156,13 +162,19 @@ const handleDetailsFormSubmit = async (e) => {
     }
 };
 
+// ▼▼▼ [修正点2] 出勤中の表示を修正 ▼▼▼
 const updatePunchUI = (doc) => {
     if (!punchButton) return;
     punchButton.disabled = false;
     if (doc) {
         projectSelectionArea.classList.add('hidden');
         punchStatusDisplay.textContent = '出勤中';
-        punchProjectDisplay.textContent = doc.project.name;
+        
+        const project = doc.project;
+        // project.client が存在し、その name プロパティがある場合のみ取引先名を表示
+        const clientName = (project.client && project.client.name) ? project.client.name : '';
+        punchProjectDisplay.textContent = [project.code, clientName, project.name].filter(Boolean).join(' ');
+
         punchButton.textContent = '退勤';
         punchButton.className = 'w-full text-white font-bold py-4 px-4 rounded-lg text-2xl transition duration-300 bg-red-600 hover:bg-red-700';
     } else {
@@ -174,6 +186,7 @@ const updatePunchUI = (doc) => {
     }
 };
 
+// ▼▼▼ [修正点3] 履歴の表示を修正 ▼▼▼
 const renderPunchRecords = (records) => {
     if (!recordsContainer) return;
     recordsContainer.innerHTML = records.length === 0 ? '<li class="p-4 text-center text-gray-500">稼働履歴はありません。</li>' : '';
@@ -185,10 +198,15 @@ const renderPunchRecords = (records) => {
         const clockOut = record.clockOutTime ? record.clockOutTime.toDate().toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'}) : '...';
         const typeText = record.status === 'active' ? '出勤中' : '完了';
         const typeColor = record.status === 'active' ? 'text-green-600' : 'text-gray-500';
+        
+        const project = record.project;
+        // project.client が存在し、その name プロパティがある場合のみ取引先名を表示
+        const clientName = (project.client && project.client.name) ? project.client.name : '';
+        const displayText = [project.code, clientName, project.name].filter(Boolean).join(' ');
 
         li.innerHTML = `
             <div class="flex-1 truncate pr-4">
-                <span class="font-semibold text-gray-800">${record.project.name}</span>
+                <span class="font-semibold text-gray-800">${displayText}</span>
             </div>
             <div class="flex items-center flex-shrink-0">
                 <span class="w-12 text-center text-xs ${typeColor}">${typeText}</span>
