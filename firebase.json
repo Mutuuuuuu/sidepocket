@@ -14,11 +14,55 @@
       "**/node_modules/**"
     ],
     "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ],
+  {
+    "source": "**",
+    "destination": "/lp.html"
+  },
+  {
+    "source": "!/projects/**",
+    "destination": "/projects.html"
+  },
+  {
+    "source": "!/summary/**",
+    "destination": "/summary.html"
+  },
+  {
+    "source": "!/calendar/**",
+    "destination": "/calendar.html"
+  },
+  {
+    "source": "!/clients/**",
+    "destination": "/clients.html"
+  },
+  {
+    "source": "!/profile/**",
+    "destination": "/profile.html"
+  },
+  {
+    "source": "!/admin/**",
+    "destination": "/admin.html"
+  },
+  {
+    "source": "!/login/**",
+    "destination": "/login.html"
+  },
+  {
+    "source": "!/signup/**",
+    "destination": "/signup.html"
+  },
+  {
+    "source": "!/contact/**",
+    "destination": "/contact.html"
+  },
+  {
+    "source": "!/terms/**",
+    "destination": "/terms.html"
+  },
+  {
+    "source": "!/privacy/**",
+    "destination": "/privacy.html"
+  }
+],
     "headers": [
       {
         "source": "**",
