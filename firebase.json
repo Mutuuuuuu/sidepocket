@@ -13,68 +13,33 @@
       "**/.*",
       "**/node_modules/**"
     ],
+    "redirects": [
+      {
+        "source": "/**",
+        "destination": "https://sidepocket.seaside-lab.com",
+        "type": 301
+      }
+    ],
     "rewrites": [
-  {
-    "source": "**",
-    "destination": "/lp.html"
-  },
-  {
-    "source": "!/projects/**",
-    "destination": "/projects.html"
-  },
-  {
-    "source": "!/summary/**",
-    "destination": "/summary.html"
-  },
-  {
-    "source": "!/calendar/**",
-    "destination": "/calendar.html"
-  },
-  {
-    "source": "!/clients/**",
-    "destination": "/clients.html"
-  },
-  {
-    "source": "!/profile/**",
-    "destination": "/profile.html"
-  },
-  {
-    "source": "!/admin/**",
-    "destination": "/admin.html"
-  },
-  {
-    "source": "!/login/**",
-    "destination": "/login.html"
-  },
-  {
-    "source": "!/signup/**",
-    "destination": "/signup.html"
-  },
-  {
-    "source": "!/contact/**",
-    "destination": "/contact.html"
-  },
-  {
-    "source": "!/terms/**",
-    "destination": "/terms.html"
-  },
-  {
-    "source": "!/privacy/**",
-    "destination": "/privacy.html"
-  }
-],
+      { "source": "/projects/**", "destination": "/projects.html" },
+      { "source": "/summary/**", "destination": "/summary.html" },
+      { "source": "/calendar/**", "destination": "/calendar.html" },
+      { "source": "/clients/**", "destination": "/clients.html" },
+      { "source": "/profile/**", "destination": "/profile.html" },
+      { "source": "/admin/**", "destination": "/admin.html" },
+      { "source": "/login/**", "destination": "/login.html" },
+      { "source": "/signup/**", "destination": "/signup.html" },
+      { "source": "/contact/**", "destination": "/contact.html" },
+      { "source": "/terms/**", "destination": "/terms.html" },
+      { "source": "/privacy/**", "destination": "/privacy.html" },
+      { "source": "**", "destination": "/lp.html" }
+    ],
     "headers": [
       {
         "source": "**",
         "headers": [
-          {
-            "key": "Cross-Origin-Opener-Policy",
-            "value": "same-origin-allow-popups"
-          },
-          {
-            "key": "Cross-Origin-Embedder-Policy",
-            "value": "unsafe-none"
-          }
+          { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" },
+          { "key": "Cross-Origin-Embedder-Policy", "value": "unsafe-none" }
         ]
       }
     ]

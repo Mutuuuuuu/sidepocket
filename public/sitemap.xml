@@ -1,62 +1,62 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://side-pocket-sls.web.app/lp.html</loc>
+    <loc>https://sidepocket.seaside-lab.com/lp.html</loc>
     <priority>1.0</priority>
     <changefreq>monthly</changefreq>
   </url>
   <url>
-    <loc>https://side-pocket-sls.web.app/index.html</loc>
+    <loc>https://sidepocket.seaside-lab.com/index.html</loc>
     <priority>0.8</priority>
     <changefreq>daily</changefreq>
   </url>
   <url>
-    <loc>https://side-pocket-sls.web.app/projects.html</loc>
+    <loc>https://sidepocket.seaside-lab.com/projects.html</loc>
     <priority>0.7</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://side-pocket-sls.web.app/summary.html</loc>
+    <loc>https://sidepocket.seaside-lab.com/summary.html</loc>
     <priority>0.7</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://side-pocket-sls.web.app/calendar.html</loc>
+    <loc>https://sidepocket.seaside-lab.com/calendar.html</loc>
     <priority>0.7</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://side-pocket-sls.web.app/clients.html</loc>
+    <loc>https://sidepocket.seaside-lab.com/clients.html</loc>
     <priority>0.7</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://side-pocket-sls.web.app/profile.html</loc>
+    <loc>https://sidepocket.seaside-lab.com/profile.html</loc>
     <priority>0.5</priority>
     <changefreq>monthly</changefreq>
   </url>
   <url>
-    <loc>https://side-pocket-sls.web.app/login.html</loc>
+    <loc>https://sidepocket.seaside-lab.com/login.html</loc>
     <priority>0.3</priority>
     <changefreq>yearly</changefreq>
   </url>
   <url>
-    <loc>https://side-pocket-sls.web.app/signup.html</loc>
+    <loc>https://sidepocket.seaside-lab.com/signup.html</loc>
     <priority>0.3</priority>
     <changefreq>yearly</changefreq>
   </url>
   <url>
-    <loc>https://side-pocket-sls.web.app/contact.html</loc>
+    <loc>https://sidepocket.seaside-lab.com/contact.html</loc>
     <priority>0.3</priority>
     <changefreq>yearly</changefreq>
   </url>
   <url>
-    <loc>https://side-pocket-sls.web.app/terms.html</loc>
+    <loc>https://sidepocket.seaside-lab.com/terms.html</loc>
     <priority>0.1</priority>
     <changefreq>yearly</changefreq>
   </url>
   <url>
-    <loc>https://side-pocket-sls.web.app/privacy.html</loc>
+    <loc>https://sidepocket.seaside-lab.com/privacy.html</loc>
     <priority>0.1</priority>
     <changefreq>yearly</changefreq>
   </url>
