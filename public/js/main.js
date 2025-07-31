@@ -1,59 +1,53 @@
+// public/js/main.js
+
 import { initializeFirebase } from './services/firebaseService.js';
 import { attachAuthListener, loadHeader } from './services/authService.js';
 import { getUserProfile, getNotifications } from './services/firestoreService.js';
 
+// ...（appContainer, loadingOverlayの定義はそのまま）...
 const appContainer = document.getElementById('app-container');
 const loadingOverlay = document.getElementById('loading-overlay');
 
-/**
- * ページの初期化
- */
+
 const initializePage = async () => {
     await initializeFirebase();
     const user = await attachAuthListener();
     if (user) {
-        await loadHeader();
-        // DOMの描画が完了してからUI初期化を実行
-        setTimeout(async () => {
-            await initializeUI(user);
-        }, 0);
+        await loadHeader(); 
+        await initializeUI(user);
     }
     loadPageScript(user);
     if (appContainer) appContainer.classList.remove('opacity-0');
     if (loadingOverlay) loadingOverlay.classList.add('hidden');
 };
 
-/**
- * ログイン後の共通UIを初期化
- * @param {object} user ログインユーザーオブジェクト
- */
 const initializeUI = async (user) => {
+    console.log("Initializing UI for user:", user.uid);
     const userProfile = await getUserProfile(user.uid);
+    console.log("User profile loaded:", userProfile);
+    console.log("User plan:", userProfile?.plan);
+
     const displayName = userProfile?.displayName || user.displayName || 'Guest';
     const photoURL = userProfile?.photoURL || user.photoURL || 'images/sidepocket_symbol.png';
 
-    // ヘッダーのユーザー情報を設定
     const headerDisplayName = document.getElementById('header-display-name');
     const headerUserIcon = document.getElementById('header-user-icon');
     if (headerDisplayName) headerDisplayName.textContent = displayName;
     if (headerUserIcon) headerUserIcon.src = photoURL;
 
-    // --- ▼▼▼ 管理者リンクの表示制御 ▼▼▼ ---
     const idTokenResult = await user.getIdTokenResult();
     if (idTokenResult.claims.isAdmin) {
         const adminLink = document.getElementById('admin-link');
         if (adminLink) adminLink.classList.remove('hidden');
     }
-    // --- ▲▲▲ ここまで ▲▲▲ ---
 
-    // --- ▼▼▼ 【追加】会員プランに応じた広告表示 ▼▼▼ ---
-    // Freeプランの場合、広告を表示する
     if (userProfile?.plan === 'Free') {
+        console.log("Plan is Free. Calling showAds().");
         showAds();
+    } else {
+        console.log("Plan is not Free, skipping ads.");
     }
-    // --- ▲▲▲ 【ここまで】 ▲▲▲ ---
 
-    // 現在のページに応じてナビゲーションのスタイルを適用
     const currentPath = window.location.pathname;
     document.querySelectorAll('[data-nav-link]').forEach(link => {
         const linkPath = link.getAttribute('href');
@@ -62,34 +56,61 @@ const initializeUI = async (user) => {
         }
     });
 
-    // メニュー開閉ロジックのセットアップ
     setupSidebarMenu();
-
-    // お知らせパネルのセットアップ
     setupNotificationPanel();
 };
 
+
 /**
- * 【追加】広告表示エリアに広告を挿入する
+ * 【再修正】複数のGoogle AdSense広告を動的に表示する
  * この関数はFreeプランのユーザーにのみ呼び出されます。
- * 各ページのHTMLに <div id="ad-container" class="hidden"></div> のような要素を配置してください。
  */
 const showAds = () => {
-    const adContainer = document.getElementById('ad-container');
-    if (adContainer) {
-        adContainer.innerHTML = `
-            <div class="w-full my-4 p-4 bg-gray-100 border border-gray-300 rounded-lg text-center">
-                <p class="text-sm text-gray-600">【広告】Standardプランにアップグレードして、この広告を非表示にしましょう！</p>
-                </div>
+    // 'ad-container-spot' クラスを持つすべての要素を取得します
+    const adSpots = document.querySelectorAll('.ad-container-spot');
+    console.log(`[Ads] Found ${adSpots.length} ad spots to fill.`);
+
+    // 見つかったすべての広告スポットに対して処理を実行します
+    adSpots.forEach((spot, index) => {
+        // 既に処理済みの場合はスキップ
+        if (spot.classList.contains('ad-initialized')) {
+            console.log(`[Ads] Spot #${index + 1} is already initialized. Skipping.`);
+            return;
+        }
+
+        console.log(`[Ads] Setting up ad for spot #${index + 1}.`);
+
+        // 広告ユニットのHTMLコードを作成
+        const adHtml = `
+            <div class="w-full my-4 p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
+                <h3 class="text-xs text-gray-400 mb-2">スポンサーリンク</h3>
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-1181039738810964" 
+                     data-ad-slot="7688931440"
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+            </div>
         `;
-        adContainer.classList.remove('hidden');
-    }
+        spot.innerHTML = adHtml;
+        
+        // hidden クラスを削除してコンテナを表示
+        spot.classList.remove('hidden');
+        // 初期化済みを示すクラスを追加
+        spot.classList.add('ad-initialized');
+
+        // 広告を配信するスクリプトを実行
+        try {
+            (window.adsbygoogle = window.adsbygoogle || []).push({});
+            console.log(`[Ads] adsbygoogle.push() called successfully for spot #${index + 1}.`);
+        } catch (e) {
+            console.error(`[Ads] Adsense push error for spot #${index + 1}:`, e);
+        }
+    });
 };
 
 
-/**
- * サイドバーメニューの開閉ロジック
- */
+// ...（setupSidebarMenu, setupNotificationPanel, loadPageScript は変更なし）...
 const setupSidebarMenu = () => {
     const sidebar = document.getElementById('sidebar');
     const sidebarOverlay = document.getElementById('sidebar-overlay');
@@ -119,9 +140,6 @@ const setupSidebarMenu = () => {
     sidebarOverlay?.addEventListener('click', closeMobileMenu);
 };
 
-/**
- * お知らせパネルのセットアップ
- */
 const setupNotificationPanel = () => {
     const notificationButton = document.getElementById('notification-button');
     const notificationPanel = document.getElementById('notification-panel');
@@ -187,7 +205,6 @@ const setupNotificationPanel = () => {
         if (notification) {
             modalTitle.textContent = notification.title;
             modalDate.textContent = notification.createdAt.toDate().toLocaleDateString('ja-JP');
-            // contentをHTMLとして解釈させることでリンクを有効化
             modalContent.innerHTML = notification.content || '詳細な内容はありません。';
             detailModal.classList.remove('hidden');
         }
@@ -200,10 +217,6 @@ const setupNotificationPanel = () => {
     });
 };
 
-/**
- * 現在のURLに応じてページ固有のスクリプトを読み込む
- * @param {object} user ログインユーザーオブジェクト
- */
 const loadPageScript = (user) => {
     const path = window.location.pathname.replace(/^\/|\.html$/g, '') || 'index';
     switch (path) {
@@ -222,11 +235,9 @@ const loadPageScript = (user) => {
         case 'calendar': 
             import('./calendar.js').then(m => m.initCalendarPage(user)); 
             break;
-        // ▼▼▼ 【ここから修正】 ▼▼▼
         case 'clients': 
             import('./clients.js').then(m => m.initClientsPage(user)); 
             break;
-        // ▲▲▲ 【ここまで修正】 ▲▲▲
         case 'login': 
             import('./auth/login.js').then(m => m.initLoginPage()); 
             break;

@@ -11,6 +11,13 @@ const storage = () => getFirebaseServices().storage;
 
 // === User Profile ===
 export const createUserProfile = (uid, data) => {
+    // 新規作成時に追加するデフォルトのプロフィール情報
+    const defaultProfileData = {
+        plan: "Free",
+        planStartDate: null,
+        planEndDate: null,
+        autoRenew: false,
+    };
     return setDoc(doc(db(), 'users', uid), { ...data, createdAt: serverTimestamp() }, { merge: true });
 };
 export const getUserProfile = async (uid) => {
