@@ -15,25 +15,64 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
-        .prose h1 { @apply text-3xl font-bold mb-6; }
-        .prose h2 { @apply text-2xl font-bold mt-8 mb-4 border-b pb-2; }
-        .prose p { @apply mb-4 leading-relaxed; }
-        .prose ol { @apply list-decimal list-inside space-y-2; }
+        .content-container {
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .content-container h1 {
+            font-size: 1.875rem; /* 3xl */
+            font-weight: 700;   /* bold */
+            margin-bottom: 2rem; /* mb-8 */
+        }
+        .content-container h2 {
+            font-size: 1.5rem;   /* 2xl */
+            font-weight: 700;    /* bold */
+            margin-top: 2.5rem;  /* mt-10 */
+            margin-bottom: 1rem; /* mb-4 */
+            padding-bottom: 0.5rem; /* pb-2 */
+            border-bottom: 1px solid #e5e7eb; /* border-b */
+        }
+        /* 条文の本文に対するインデント */
+        .content-container h2 + p,
+        .content-container h2 + ul,
+        .content-container h2 + ol {
+            padding-left: 1rem; /* pl-4 */
+        }
+        .content-container p {
+            line-height: 1.75;
+            margin-bottom: 1rem;
+        }
+        .content-container ul {
+            list-style-type: disc;
+            list-style-position: inside;
+            padding-left: 1rem;
+        }
+        .content-container ol {
+            list-style-type: decimal;
+            list-style-position: inside;
+            padding-left: 1rem;
+        }
+        .content-container li {
+            margin-bottom: 0.5rem;
+            padding-left: 1rem;
+        }
+        .content-container ol ol {
+            list-style-type: lower-alpha;
+            margin-top: 0.5rem;
+        }
     </style>
 </head>
 <body class="bg-white text-gray-800">
 
-    <!-- ヘッダーセクション -->
     <header class="bg-white shadow-sm sticky top-0 z-50">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
-                <!-- ロゴ -->
                 <div class="flex-shrink-0">
-                    <a href="/" title="sidepocketホーム">
+                    <a href="/lp.html" title="sidepocketホーム">
                         <img src="https://raw.githubusercontent.com/mutuuuuuu/sidepocket/main/public/images/sidepocket_Logo.png" alt="sidepocket Logo" class="h-8 w-auto">
                     </a>
                 </div>
-                <!-- ナビゲーションボタン -->
                 <div class="flex items-center space-x-4">
                     <a href="/login.html" class="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">ログイン</a>
                     <a href="/signup.html" class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-5 rounded-md shadow-sm transition-colors">
@@ -45,8 +84,8 @@
     </header>
 
     <main class="py-12 sm:py-16">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-            <article class="prose max-w-4xl mx-auto">
+        <div class="content-container px-4 sm:px-6 lg:px-8">
+            <article>
                 <h1>sidepocket 利用規約</h1>
                 <p>この利用規約（以下、「本規約」といいます。）は、sidepocket運営事務局（以下、「当方」といいます。）がこのウェブサイト上で提供するサービス「sidepocket」（以下、「本サービス」といいます。）の利用条件を定めるものです。登録ユーザーの皆さま（以下、「ユーザー」といいます。）には、本規約に従って、本サービスをご利用いただきます。</p>
                 
@@ -57,7 +96,7 @@
                 <ol>
                     <li>登録希望者が当方の定める方法によって利用登録を申請し、当方がこれを承認することによって、利用登録が完了するものとします。</li>
                     <li>当方は、利用登録の申請者に以下の事由があると判断した場合、利用登録の申請を承認しないことがあり、その理由については一切の開示義務を負わないものとします。
-                        <ol class="ml-4 mt-2" style="list-style-type: lower-alpha;">
+                        <ol>
                             <li>利用登録の申請に際して虚偽の事項を届け出た場合</li>
                             <li>本規約に違反したことがある者からの申請である場合</li>
                             <li>その他、当方が利用登録を相当でないと判断した場合</li>
@@ -72,7 +111,11 @@
                 </ol>
 
                 <h2>第4条（利用料金および支払方法）</h2>
-                <p>本サービスは、現在無料で提供しております。将来的に有料プランを提供する場合は、事前にユーザーに通知し、同意を得るものとします。</p>
+                <ol>
+                    <li>本サービスの一部機能は有料で提供する場合があります。</li>
+                    <li>有料サービスの料金、支払方法、解約手続きその他の条件については、当方が別途定め、本サービスまたは関連サイト上に表示するものとします。</li>
+                    <li>ユーザーが有料サービスを利用開始した後は、法令で定められる場合を除き、料金の返金は行いません。</li>
+                </ol>
 
                 <h2>第5条（禁止事項）</h2>
                 <p>ユーザーは、本サービスの利用にあたり、以下の行為をしてはなりません。</p>
@@ -90,7 +133,7 @@
                 <h2>第6条（本サービスの提供の停止等）</h2>
                 <ol>
                     <li>当方は、以下のいずれかの事由があると判断した場合、ユーザーに事前に通知することなく本サービスの全部または一部の提供を停止または中断することができるものとします。
-                        <ol class="ml-4 mt-2" style="list-style-type: lower-alpha;">
+                        <ol>
                             <li>本サービスにかかるコンピュータシステムの保守点検または更新を行う場合</li>
                             <li>地震、落雷、火災、停電または天災などの不可抗力により、本サービスの提供が困難となった場合</li>
                             <li>コンピュータまたは通信回線等が事故により停止した場合</li>
@@ -101,12 +144,13 @@
                 </ol>
 
                 <h2>第7条（著作権）</h2>
-                <p>本サービスにおいてユーザーが投稿した文章、画像等の著作権は、当該ユーザーその他既存の権利者に留保されるものとします。ただし、当方は、本サービスの提供・改善・プロモーションに必要な範囲で、ユーザーが投稿した情報を無償で利用できるものとし、ユーザーはこれに同意するものとします。</p>
+                <p>本サービスにおいてユーザーが投稿した文章、画像等の著作権は、当該ユーザーその他既存の権利者に留保されるものとします。ただし、当方は、本サービスの提供・改善およびサービスの周知・広報に必要な範囲に限定して、ユーザーが投稿した情報を無償で利用できるものとし、ユーザーはこれに同意するものとします。</p>
 
                 <h2>第8条（免責事項）</h2>
                 <ol>
                     <li>当方の債務不履行責任は、当方の故意または重過失によらない場合には免責されるものとします。</li>
                     <li>当方は、何らかの理由によって責任を負う場合にも、通常生じうる損害の範囲内においてのみ賠償の責任を負うものとします。</li>
+                    <li>当方は、本サービスに含まれる情報の正確性、最新性、有用性等についていかなる保証も行いません。</li>
                     <li>当方は、本サービスに関して、ユーザーと他のユーザーまたは第三者との間において生じた取引、連絡または紛争等について一切責任を負いません。</li>
                 </ol>
 
@@ -114,21 +158,26 @@
                 <p>当方は、ユーザーに通知することなく、本サービスの内容を変更しまたは本サービスの提供を中止することができるものとし、これによってユーザーに生じた損害について一切の責任を負いません。</p>
 
                 <h2>第10条（利用規約の変更）</h2>
-                <p>当方は、必要と判断した場合には、ユーザーに通知することなくいつでも本規約を変更することができるものとします。</p>
+                <p>当方は、必要と判断した場合には、本サービス上での掲示その他当方が適切と判断する方法により、事前に通知することなく本規約を変更することができます。変更後の規約は、当方が定める方法により公表した時点から効力を生じるものとします。</p>
+                
+                <h2>第11条（退会）</h2>
+                <p>ユーザーは、当方の定める手続きに従い、いつでも本サービスから退会することができます。</p>
 
-                <h2>第11条（準拠法・裁判管轄）</h2>
+                <h2>第12条（外部サービスの利用）</h2>
+                <p>本サービスは、Firebase AuthenticationやGoogle Calendar API等の外部サービスを利用しています。ユーザーは、これらのサービスを利用するにあたり、当該外部サービスの利用規約およびプライバシーポリシー等に同意する必要があります。</p>
+
+                <h2>第13条（準拠法・裁判管轄）</h2>
                 <ol>
                     <li>本規約の解釈にあたっては、日本法を準拠法とします。</li>
                     <li>本サービスに関して紛争が生じた場合には、当方の本店所在地を管轄する裁判所を専属的合意管轄とします。</li>
                 </ol>
 
-                <p class="mt-8">以上</p>
-                <p>制定日：2025年7月19日</p>
+                <p style="margin-top: 2rem;">以上</p>
+                <p>改定日：2025年7月31日</p>
             </article>
         </div>
     </main>
 
-    <!-- フッター -->
     <footer class="bg-gray-100">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="text-center text-sm text-gray-500">

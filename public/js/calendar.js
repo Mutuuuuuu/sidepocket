@@ -4,7 +4,7 @@ import { getProjects, addCalendarEventsAsTimestamps } from './services/firestore
 import { toggleLoading, showStatus } from './services/uiService.js';
 
 // --- Google API & OAuth 関連 ---
-const GOOGLE_CLIENT_ID = '887116583823-rjg8ibt6p37pnjqo2sosaer155id82v5.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = '858098732942-ju20bsbt07qkfi2hg3v8uoii4jks0lt0.apps.googleusercontent.com';
 const GOOGLE_SCOPES = "https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events.readonly";
 const TOKEN_STORAGE_KEY = 'google_auth_token';
 
