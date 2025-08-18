@@ -13,13 +13,6 @@
       "**/.*",
       "**/node_modules/**"
     ],
-    "redirects": [
-      {
-        "source": "/**",
-        "destination": "https://sidepocket.seaside-lab.com",
-        "type": 301
-      }
-    ],
     "rewrites": [
       { "source": "/projects/**", "destination": "/projects.html" },
       { "source": "/summary/**", "destination": "/summary.html" },
@@ -34,6 +27,7 @@
       { "source": "/privacy/**", "destination": "/privacy.html" },
       { "source": "**", "destination": "/lp.html" }
     ],
+    
     "headers": [
       {
         "source": "**",

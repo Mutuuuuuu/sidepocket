@@ -61,55 +61,6 @@ const initializeUI = async (user) => {
 };
 
 
-/**
- * 【再修正】複数のGoogle AdSense広告を動的に表示する
- * この関数はFreeプランのユーザーにのみ呼び出されます。
- */
-const showAds = () => {
-    // 'ad-container-spot' クラスを持つすべての要素を取得します
-    const adSpots = document.querySelectorAll('.ad-container-spot');
-    console.log(`[Ads] Found ${adSpots.length} ad spots to fill.`);
-
-    // 見つかったすべての広告スポットに対して処理を実行します
-    adSpots.forEach((spot, index) => {
-        // 既に処理済みの場合はスキップ
-        if (spot.classList.contains('ad-initialized')) {
-            console.log(`[Ads] Spot #${index + 1} is already initialized. Skipping.`);
-            return;
-        }
-
-        console.log(`[Ads] Setting up ad for spot #${index + 1}.`);
-
-        // 広告ユニットのHTMLコードを作成
-        const adHtml = `
-            <div class="w-full my-4 p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
-                <h3 class="text-xs text-gray-400 mb-2">スポンサーリンク</h3>
-                <ins class="adsbygoogle"
-                     style="display:block"
-                     data-ad-client="ca-pub-1181039738810964" 
-                     data-ad-slot="7688931440"
-                     data-ad-format="auto"
-                     data-full-width-responsive="true"></ins>
-            </div>
-        `;
-        spot.innerHTML = adHtml;
-        
-        // hidden クラスを削除してコンテナを表示
-        spot.classList.remove('hidden');
-        // 初期化済みを示すクラスを追加
-        spot.classList.add('ad-initialized');
-
-        // 広告を配信するスクリプトを実行
-        try {
-            (window.adsbygoogle = window.adsbygoogle || []).push({});
-            console.log(`[Ads] adsbygoogle.push() called successfully for spot #${index + 1}.`);
-        } catch (e) {
-            console.error(`[Ads] Adsense push error for spot #${index + 1}:`, e);
-        }
-    });
-};
-
-
 // ...（setupSidebarMenu, setupNotificationPanel, loadPageScript は変更なし）...
 const setupSidebarMenu = () => {
     const sidebar = document.getElementById('sidebar');
@@ -249,5 +200,70 @@ const loadPageScript = (user) => {
             break;
     }
 };
+
+// ====== AdSense 動的ロード & 表示（main.js に追加）======
+
+// あなたの Publisher ID / ユニット slot
+const ADS_CLIENT = "ca-pub-1181039738810964";   // ← 置き換え可
+const AD_SLOT    = "7688931440";                // ← 置き換え可（レスポンシブ・ディスプレイ推奨）
+
+// 重複読み込みを避けつつ adsbygoogle.js を動的ロード
+const ensureAdsenseLoaded = () =>
+  new Promise((resolve) => {
+    // 既にロード済みなら何もしない
+    if (
+      window.adsbygoogle ||
+      document.querySelector('script[src*="pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"]')
+    ) return resolve();
+
+    const s = document.createElement("script");
+    s.async = true;
+    s.crossOrigin = "anonymous";
+    s.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADS_CLIENT}`;
+    s.onload = () => resolve();
+    document.head.appendChild(s);
+  });
+
+// 既存の showAds をこれで置き換え
+const showAds = async () => {
+  await ensureAdsenseLoaded();
+
+  const adSpots = document.querySelectorAll(".ad-container-spot");
+  console.log(`[Ads] Found ${adSpots.length} ad spots to fill.`);
+
+  adSpots.forEach((spot, index) => {
+    // 2度挿入防止
+    if (spot.classList.contains("ad-initialized")) {
+      console.log(`[Ads] Spot #${index + 1} already initialized. Skipped.`);
+      return;
+    }
+
+    // 広告ユニット（レスポンシブ）の HTML
+    const adHtml = `
+      <div class="w-full my-4 p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
+        <h3 class="text-xs text-gray-400 mb-2">スポンサーリンク</h3>
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="${ADS_CLIENT}"
+             data-ad-slot="${AD_SLOT}"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+      </div>
+    `;
+
+    spot.innerHTML = adHtml;
+    spot.classList.remove("hidden");
+    spot.classList.add("ad-initialized");
+
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+      console.log(`[Ads] push() called for spot #${index + 1}`);
+    } catch (e) {
+      console.error(`[Ads] push error #${index + 1}`, e);
+    }
+  });
+};
+// ====== /AdSense 動的ロード & 表示 ======
+
 
 document.addEventListener('DOMContentLoaded', initializePage);
